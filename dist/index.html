@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Lokaler Rechner zum Vergleich der Kita-Beiträge nach alter und neuer Satzung."
+    />
+    <title>Kita-Beitragsvergleich</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="calculator.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <noscript>
+      <div class="error-message noscript-message">JavaScript ist deaktiviert. Bitte diese Datei in einem Browser mit aktiviertem JavaScript öffnen.</div>
+    </noscript>
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+      <div>
+        <p class="eyebrow">Familienplanung</p>
+        <h1>Kita-Beitragsvergleich</h1>
+      </div>
+      <div class="local-badge" title="Alle Daten bleiben in diesem Browser">
+        <span class="local-dot" aria-hidden="true"></span>
+        Lokal &amp; privat
+      </div>
+    </header>
+
+    <main>
+      <section class="workspace" aria-labelledby="eingaben-heading">
+        <div class="section-heading">
+          <div>
+            <p class="step-label">01 / Eingaben</p>
+            <h2 id="eingaben-heading">Familiensituation</h2>
+          </div>
+          <p class="section-note">Die Berechnung beginnt immer im August des gewählten Jahres.</p>
+        </div>
+
+        <form id="calculator-form" novalidate>
+          <div class="primary-inputs">
+            <label class="field income-field">
+              <span>Jahreseinkommen</span>
+              <span class="input-shell">
+                <input id="income" name="income" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 64.500" required />
+                <span class="suffix">€</span>
+              </span>
+            </label>
+            <label class="field year-field">
+              <span>Startjahr</span>
+              <input id="start-year" name="startYear" type="number" min="2000" max="2200" step="1" required />
+            </label>
+          </div>
+
+          <div class="children-header">
+            <h3>Kinder</h3>
+            <p>Mindestens ein Kind vollständig eintragen.</p>
+          </div>
+
+          <div class="children-grid" id="children-grid">
+            <fieldset class="child-card" data-child="1">
+              <legend><span>01</span> Kind 1</legend>
+              <button type="button" class="clear-child-button" id="clear-child-1" aria-label="Eintrag für Kind 1 löschen">× <span>Eintrag löschen</span></button>
+              <label class="field">
+                <span>Geburtstag</span>
+                <input name="birth-1" type="date" />
+              </label>
+              <label class="field">
+                <span>Kita-Startjahr (ab 1. August)</span>
+                <input name="entry-1" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
+              </label>
+            </fieldset>
+            <fieldset class="child-card" data-child="2">
+              <legend><span>02</span> Kind 2</legend>
+              <button type="button" class="clear-child-button" id="clear-child-2" aria-label="Eintrag für Kind 2 löschen">× <span>Eintrag löschen</span></button>
+              <label class="field">
+                <span>Geburtstag</span>
+                <input name="birth-2" type="date" />
+              </label>
+              <label class="field">
+                <span>Kita-Startjahr (ab 1. August)</span>
+                <input name="entry-2" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
+              </label>
+            </fieldset>
+            <fieldset class="child-card" data-child="3">
+              <legend><span>03</span> Kind 3</legend>
+              <button type="button" class="clear-child-button" id="clear-child-3" aria-label="Eintrag für Kind 3 löschen">× <span>Eintrag löschen</span></button>
+              <label class="field">
+                <span>Geburtstag</span>
+                <input name="birth-3" type="date" />
+              </label>
+              <label class="field">
+                <span>Kita-Startjahr (ab 1. August)</span>
+                <input name="entry-3" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
+              </label>
+            </fieldset>
+            <fieldset class="child-card" data-child="4">
+              <legend><span>04</span> Kind 4</legend>
+              <button type="button" class="clear-child-button" id="clear-child-4" aria-label="Eintrag für Kind 4 löschen">× <span>Eintrag löschen</span></button>
+              <label class="field">
+                <span>Geburtstag</span>
+                <input name="birth-4" type="date" />
+              </label>
+              <label class="field">
+                <span>Kita-Startjahr (ab 1. August)</span>
+                <input name="entry-4" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
+              </label>
+            </fieldset>
+          </div>
+
+          <div id="form-error" class="error-message" role="alert" hidden></div>
+          <div class="form-actions">
+            <details class="example-menu" id="example-menu">
+              <summary class="button secondary">Geprüftes Beispiel einsetzen <span aria-hidden="true">⌄</span></summary>
+              <div class="example-options" role="group" aria-label="Geprüftes Beispiel auswählen">
+                <button type="button" id="example-1">
+                  <strong>Beispiel 1 · Zwillinge</strong>
+                  <span>36.500 € · 2 Kinder</span>
+                </button>
+                <button type="button" id="example-2">
+                  <strong>Beispiel 2 · Drei Kinder</strong>
+                  <span>130.000 € · 3 Kinder</span>
+                </button>
+                <button type="button" id="example-3">
+                  <strong>Beispiel 3 · Sommer-/Winterkind</strong>
+                  <span>90.000 € · 2 Kinder</span>
+                </button>
+              </div>
+            </details>
+            <button type="submit" class="button primary" id="calculate-button">
+              Beiträge berechnen
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section id="results" class="results" aria-labelledby="results-heading" hidden>
+        <div class="section-heading results-heading">
+          <div>
+            <p class="step-label">02 / Vergleich</p>
+            <h2 id="results-heading">Ergebnis</h2>
+          </div>
+          <button type="button" class="print-button" id="print-button" aria-label="Ergebnis drucken">
+            <span aria-hidden="true">⎙</span> Drucken
+          </button>
+        </div>
+
+        <div class="summary-grid" aria-label="Gesamtergebnis">
+          <article class="summary-card old">
+            <p>Alte Satzung</p>
+            <strong id="old-total">–</strong>
+            <span>Gesamtkosten</span>
+          </article>
+          <article class="summary-card new">
+            <p>Neue Satzung</p>
+            <strong id="new-total">–</strong>
+            <span>Gesamtkosten</span>
+          </article>
+          <article class="summary-card difference" id="difference-card">
+            <p id="difference-label">Differenz</p>
+            <strong id="difference-total">–</strong>
+            <span id="difference-caption">Neue minus alte Satzung</span>
+          </article>
+          <article class="summary-card percentage" id="percentage-card">
+            <p id="percentage-label">Mehrkosten in %</p>
+            <strong id="percentage-total">–</strong>
+            <span id="percentage-caption">bezogen auf die alte Satzung</span>
+          </article>
+        </div>
+
+        <section class="compact-table-section" aria-labelledby="compact-table-heading">
+          <div class="compact-table-heading">
+            <div>
+              <p class="step-label">Übersicht</p>
+              <h3 id="compact-table-heading">Kompakte Beitragstabelle</h3>
+            </div>
+            <div class="compact-table-actions">
+              <button type="button" class="button secondary copy-button" id="copy-table-button">Tabelle kopieren</button>
+              <span id="copy-status" class="copy-status" role="status" aria-live="polite"></span>
+            </div>
+          </div>
+          <div class="table-intro">
+            <p id="result-description"></p>
+            <p class="scroll-hint">Tabelle seitlich verschiebbar</p>
+          </div>
+          <div class="table-wrap compact-table-wrap">
+            <table aria-label="Kompakte Beitragstabelle">
+              <thead>
+                <tr>
+                  <th scope="col">Zeitraum</th>
+                  <th scope="col" class="number">Monate</th>
+                  <th scope="col" class="number">Alt / Monat</th>
+                  <th scope="col" class="number">Neu / Monat</th>
+                  <th scope="col" class="number">Differenz / Monat</th>
+                  <th scope="col" class="number">Alt gesamt</th>
+                  <th scope="col" class="number">Neu gesamt</th>
+                  <th scope="col" class="number">Differenz gesamt</th>
+                </tr>
+              </thead>
+              <tbody id="compact-result-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <details class="detail-view" id="detail-view">
+          <summary>
+            <span>Detailansicht</span>
+            <small>Beiträge, Kinder, Alter und angewandte Regeln je Abschnitt</small>
+          </summary>
+          <div class="detail-view-content">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Zeitraum</th>
+                    <th scope="col" class="number">Monate</th>
+                    <th scope="col" class="number">Alt / Monat</th>
+                    <th scope="col" class="number">Neu / Monat</th>
+                    <th scope="col" class="number">Differenz / Monat</th>
+                    <th scope="col" class="number">Alt gesamt</th>
+                    <th scope="col" class="number">Neu gesamt</th>
+                    <th scope="col" class="number">Differenz gesamt</th>
+                  </tr>
+                </thead>
+                <tbody id="result-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        <details class="rules-box">
+          <summary>Berechnungsgrundlagen und Annahmen</summary>
+          <div class="rules-content">
+            <section>
+              <h4>Zeitraum und Betreuung</h4>
+              <ul>
+                <li>Die Berechnung beginnt am 1. August des gewählten Startjahres.</li>
+                <li>Der Kita-Start jedes Kindes wird automatisch auf den 1. August seines angegebenen Kita-Startjahres gesetzt. Vorher wird das Kind nicht berücksichtigt.</li>
+                <li>Die Berechnung endet mit dem letzten Kita-Monat des zuletzt ausscheidenden Kindes.</li>
+                <li>Alle Beiträge werden monatsgenau und centgenau berechnet. Ein Altersklassenwechsel gilt immer ab dem Monat nach dem maßgeblichen Geburtstag.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4>Beitragsfreie Jahre</h4>
+              <ul>
+                <li><strong>Sommerkinder</strong> haben vom 1. Januar bis 30. September Geburtstag. Sie sind ab August des Jahres beitragsfrei, in dem sie vier Jahre alt werden, und verlassen die Kita nach dem Juli des Jahres, in dem sie sechs Jahre alt werden.</li>
+                <li><strong>Winterkinder</strong> haben vom 1. Oktober bis 31. Dezember Geburtstag. Sie sind ab August des Kalenderjahres beitragsfrei, das auf das Jahr ihres vierten Geburtstags folgt, und verlassen die Kita nach dem Juli des Jahres, in dem sie sieben Jahre alt werden.</li>
+                <li>Damit umfassen die beitragsfreien Jahre bei Sommer- und Winterkindern jeweils genau 24 Monate.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4>Alte Satzung</h4>
+              <ul>
+                <li>Bis einschließlich des Monats des zweiten Geburtstags gilt der U2-Beitrag. Ab dem Folgemonat gilt der Ü2-Beitrag.</li>
+                <li>Sind mehrere Kinder gleichzeitig in der Kita und noch nicht in den beitragsfreien Jahren, wird nur der höchste ihrer Beiträge erhoben. Die weiteren Kinder zahlen 0 %.</li>
+                <li>Ist mindestens eines der gleichzeitig betreuten Kinder in den beitragsfreien Jahren, sind auch seine Geschwister beitragsfrei. Der Familienbeitrag beträgt dann 0 €.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4>Neue Satzung</h4>
+              <ul>
+                <li>Bis einschließlich des Monats des dritten Geburtstags gilt der U3-Beitrag. Ab dem Folgemonat gilt der Ü3-Beitrag.</li>
+                <li>Das Kind mit dem höchsten Beitrag zahlt 100 %. Das zweite Kind zahlt 25 % seines eigenen Beitrags. Das dritte und jedes weitere Kind zahlen 0 %.</li>
+                <li>Ein Kind in den beitragsfreien Jahren belegt weiterhin einen Geschwisterplatz: Das erste noch zahlungspflichtige Geschwisterkind zahlt dann 25 %, weitere Geschwister zahlen 0 %.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4>Ergebnis und Abschnitte</h4>
+              <ul>
+                <li>Die Detailansicht beginnt einen neuen Abschnitt, sobald sich Beitrag, Altersklasse, Kita-Status oder Geschwisterrolle mindestens eines Kindes ändert.</li>
+                <li>Die kompakte Tabelle fasst direkt aufeinanderfolgende Detailabschnitte zusammen, wenn die Monatsbeiträge nach beiden Satzungen gleich bleiben.</li>
+                <li>Abschnittssumme = Monatsbeitrag × Anzahl der Monate. Differenz = neue Satzung minus alte Satzung.</li>
+                <li>Mehrkosten in Prozent = Differenz ÷ Gesamtkosten der alten Satzung × 100. Bei 0 € Ausgangskosten ist kein Prozentwert berechenbar.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4>Beitragstabellen</h4>
+              <div class="rate-tables">
+                <table class="rate-table">
+                  <caption>Alte Satzung</caption>
+                  <thead><tr><th>Einkommen</th><th>U2</th><th>Ü2</th></tr></thead>
+                  <tbody>
+                    <tr><td>0 bis unter 33.000 €</td><td>0 €</td><td>0 €</td></tr>
+                    <tr><td>33.000 bis unter 37.000 €</td><td>106 €</td><td>61 €</td></tr>
+                    <tr><td>37.000 bis unter 50.000 €</td><td>178 €</td><td>102 €</td></tr>
+                    <tr><td>50.000 bis unter 62.000 €</td><td>266 €</td><td>152 €</td></tr>
+                    <tr><td>62.000 bis unter 75.000 €</td><td>370 €</td><td>212 €</td></tr>
+                    <tr><td>75.000 bis unter 87.000 €</td><td>491 €</td><td>281 €</td></tr>
+                    <tr><td>87.000 bis unter 100.000 €</td><td>629 €</td><td>359 €</td></tr>
+                    <tr><td>ab 100.000 €</td><td>725 €</td><td>415 €</td></tr>
+                  </tbody>
+                </table>
+                <table class="rate-table">
+                  <caption>Neue Satzung</caption>
+                  <thead><tr><th>Einkommen</th><th>U3</th><th>Ü3</th></tr></thead>
+                  <tbody>
+                    <tr><td>bis 36.000 €</td><td>0 €</td><td>0 €</td></tr>
+                    <tr><td>36.000,01 bis 43.000 €</td><td>122 €</td><td>82 €</td></tr>
+                    <tr><td>43.000,01 bis 50.000 €</td><td>153 €</td><td>102 €</td></tr>
+                    <tr><td>50.000,01 bis 56.000 €</td><td>190 €</td><td>127 €</td></tr>
+                    <tr><td>56.000,01 bis 62.000 €</td><td>228 €</td><td>152 €</td></tr>
+                    <tr><td>62.000,01 bis 75.000 €</td><td>317 €</td><td>212 €</td></tr>
+                    <tr><td>75.000,01 bis 87.000 €</td><td>421 €</td><td>281 €</td></tr>
+                    <tr><td>87.000,01 bis 100.000 €</td><td>550 €</td><td>366 €</td></tr>
+                    <tr><td>100.000,01 bis 112.000 €</td><td>634 €</td><td>423 €</td></tr>
+                    <tr><td>112.000,01 bis 125.000 €</td><td>659 €</td><td>440 €</td></tr>
+                    <tr><td>125.000,01 bis 150.000 €</td><td>686 €</td><td>458 €</td></tr>
+                    <tr><td>150.000,01 bis 175.000 €</td><td>713 €</td><td>476 €</td></tr>
+                    <tr><td>über 175.000 €</td><td>742 €</td><td>495 €</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <footer>
+      <p>Die Berechnung ist eine Planungshilfe. Maßgeblich bleibt der Bescheid des zuständigen Trägers.</p>
+    </footer>
+  </body>
+</html>

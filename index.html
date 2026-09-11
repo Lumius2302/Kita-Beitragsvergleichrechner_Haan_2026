@@ -1,0 +1,1219 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Lokaler Rechner zum Vergleich der Kita-Beiträge nach alter und neuer Satzung."
+    />
+    <title>Kita-Beitragsvergleich</title>
+    <style>
+:root {
+  --ink: #14233c;
+  --muted: #667085;
+  --line: #d9e0ea;
+  --paper: #ffffff;
+  --canvas: #f3f6fa;
+  --navy: #15365d;
+  --navy-dark: #0d2747;
+  --blue: #2d6cdf;
+  --cyan: #21a7bd;
+  --old: #66758b;
+  --new: #2576d8;
+  --positive: #087a55;
+  --positive-bg: #eaf8f1;
+  --negative: #ae3d36;
+  --negative-bg: #fff0ee;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; background: var(--canvas); font-size: 16px; line-height: 1.5; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+
+.topbar {
+  min-height: 100px;
+  padding: 22px clamp(20px, 5vw, 72px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: white;
+  background: linear-gradient(115deg, var(--navy-dark), var(--navy) 64%, #174a77);
+  box-shadow: 0 12px 35px rgba(13, 39, 71, 0.18);
+}
+
+.brand-mark { display: grid; grid-template-columns: repeat(3, 7px); align-items: end; gap: 4px; height: 34px; width: 30px; }
+.brand-mark span { display: block; border-radius: 4px; background: #79e2ee; }
+.brand-mark span:nth-child(1) { height: 16px; }
+.brand-mark span:nth-child(2) { height: 27px; }
+.brand-mark span:nth-child(3) { height: 34px; }
+.topbar h1 { margin: 0; font-size: clamp(1.45rem, 3vw, 2rem); line-height: 1.15; letter-spacing: -0.025em; }
+.eyebrow { margin: 0 0 3px; color: #a7dbe5; text-transform: uppercase; letter-spacing: .15em; font-size: .75rem; font-weight: 700; }
+.local-badge { margin-left: auto; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.19); border-radius: 999px; color: #d8e9f6; font-size: .82rem; }
+.local-dot { width: 8px; height: 8px; border-radius: 50%; background: #64ddab; box-shadow: 0 0 0 4px rgba(100,221,171,.13); }
+
+main { width: min(1480px, calc(100% - 32px)); margin: 34px auto 50px; }
+.workspace, .results { background: var(--paper); border: 1px solid #e1e7ef; border-radius: 18px; box-shadow: 0 18px 55px rgba(30, 56, 89, .08); overflow: hidden; }
+.workspace { padding: clamp(24px, 4vw, 46px); }
+.section-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 30px; }
+.section-heading h2 { margin: 2px 0 0; font-size: clamp(1.65rem, 3vw, 2.3rem); line-height: 1.1; letter-spacing: -.035em; }
+.step-label { margin: 0; color: var(--blue); font-size: .75rem; letter-spacing: .15em; font-weight: 800; text-transform: uppercase; }
+.section-note { max-width: 390px; margin: 0; color: var(--muted); text-align: right; font-size: .9rem; }
+
+.primary-inputs { display: grid; grid-template-columns: minmax(260px, 2fr) minmax(180px, 1fr); gap: 18px; max-width: 720px; padding: 20px; border-radius: 14px; background: #eef4fb; }
+.field { display: grid; gap: 8px; min-width: 0; }
+.field > span:first-child { color: #36445a; font-size: .86rem; font-weight: 700; }
+input { width: 100%; height: 48px; padding: 0 13px; color: var(--ink); background: white; border: 1px solid #cbd5e2; border-radius: 9px; outline: none; transition: border-color .16s, box-shadow .16s; }
+input:hover { border-color: #99a9bd; }
+input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(45,108,223,.14); }
+.input-shell { position: relative; display: block; }
+.input-shell input { padding-right: 42px; }
+.suffix { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 700; }
+
+.children-header { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin: 34px 0 13px; }
+.children-header h3 { margin: 0; font-size: 1rem; }
+.children-header p { margin: 0; color: var(--muted); font-size: .83rem; }
+.children-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.child-card { position: relative; min-width: 0; margin: 0; padding: 22px 18px 18px; display: grid; gap: 16px; border: 1px solid var(--line); border-radius: 13px; background: #fbfcfe; }
+.child-card legend { padding: 0 6px; color: var(--ink); font-weight: 800; }
+.child-card legend span { margin-right: 7px; color: var(--cyan); font-size: .72rem; letter-spacing: .08em; }
+.child-card input { height: 44px; }
+.clear-child-button { position: absolute; top: 9px; right: 10px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; color: #758196; background: transparent; border: 0; border-radius: 6px; font-size: .75rem; font-weight: 700; }
+.clear-child-button:hover { color: #9b342f; background: #fff0ee; }
+.clear-child-button:focus-visible { outline: 3px solid rgba(45,108,223,.2); outline-offset: 1px; }
+
+.form-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 26px; }
+.button { min-height: 48px; padding: 0 20px; border-radius: 9px; border: 1px solid transparent; font-weight: 750; transition: transform .16s, background .16s, box-shadow .16s; }
+.button:hover { transform: translateY(-1px); }
+.button.primary { display: inline-flex; align-items: center; gap: 24px; color: white; background: var(--navy); box-shadow: 0 8px 20px rgba(21,54,93,.2); }
+.button.primary:hover { background: var(--navy-dark); }
+.button.secondary { color: var(--navy); border-color: #c9d4e1; background: white; }
+.example-menu { position: relative; }
+.example-menu > summary { list-style: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
+.example-menu > summary::-webkit-details-marker { display: none; }
+.example-menu[open] > summary { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(45,108,223,.12); }
+.example-menu > summary span { color: var(--blue); font-size: 1rem; }
+.example-options { position: absolute; z-index: 10; right: 0; bottom: calc(100% + 9px); width: min(340px, calc(100vw - 40px)); padding: 7px; border: 1px solid #ccd6e2; border-radius: 11px; background: white; box-shadow: 0 16px 40px rgba(20,35,60,.18); }
+.example-options button { width: 100%; padding: 11px 12px; display: block; color: var(--ink); background: transparent; border: 0; border-radius: 8px; text-align: left; }
+.example-options button:hover, .example-options button:focus-visible { background: #eef4fb; outline: none; }
+.example-options strong, .example-options span { display: block; }
+.example-options strong { font-size: .86rem; }
+.example-options span { margin-top: 2px; color: var(--muted); font-size: .76rem; }
+.error-message { margin-top: 20px; padding: 13px 15px; color: #8d2e29; background: #fff1ef; border-left: 4px solid #d75a50; border-radius: 7px; }
+.noscript-message { width: min(900px, calc(100% - 32px)); margin: 20px auto; }
+
+.results { margin-top: 28px; padding: clamp(24px, 4vw, 46px); }
+.results-heading { margin-bottom: 23px; }
+.print-button { padding: 9px 13px; color: var(--navy); background: white; border: 1px solid var(--line); border-radius: 8px; font-weight: 700; }
+.summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.summary-card { min-height: 142px; padding: 20px 22px; border-radius: 13px; border: 1px solid var(--line); background: #f8fafc; }
+.summary-card p { margin: 0 0 10px; font-weight: 750; }
+.summary-card strong { display: block; font-size: clamp(1.7rem, 4vw, 2.45rem); line-height: 1.1; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.summary-card span { display: block; margin-top: 8px; color: var(--muted); font-size: .8rem; }
+.summary-card.old { border-top: 4px solid var(--old); }
+.summary-card.new { border-top: 4px solid var(--new); }
+.summary-card.difference { border-top: 4px solid var(--cyan); }
+.summary-card.difference.saves { color: var(--positive); background: var(--positive-bg); border-color: #bfe8d5; border-top-color: var(--positive); }
+.summary-card.difference.costs { color: var(--negative); background: var(--negative-bg); border-color: #f3cbc6; border-top-color: var(--negative); }
+.summary-card.difference.neutral { color: var(--navy); }
+.summary-card.percentage { border-top: 4px solid #7656c7; }
+.summary-card.percentage.saves { color: var(--positive); background: var(--positive-bg); border-color: #bfe8d5; border-top-color: var(--positive); }
+.summary-card.percentage.costs { color: var(--negative); background: var(--negative-bg); border-color: #f3cbc6; border-top-color: var(--negative); }
+.summary-card.percentage.neutral { color: var(--navy); }
+.summary-card.percentage strong { font-size: clamp(1.35rem, 3vw, 2.15rem); overflow-wrap: anywhere; }
+
+.table-intro { display: flex; justify-content: space-between; gap: 20px; margin: 30px 0 12px; color: var(--muted); font-size: .87rem; }
+.table-intro p { margin: 0; }
+.scroll-hint { display: none; }
+.table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+table { width: 100%; min-width: 1120px; border-collapse: collapse; font-size: .88rem; }
+th { padding: 13px 14px; color: #536075; background: #edf2f7; border-bottom: 1px solid #d4dde8; text-align: left; font-size: .75rem; letter-spacing: .025em; text-transform: uppercase; white-space: nowrap; }
+td { padding: 15px 14px; border-bottom: 1px solid #e5eaf0; vertical-align: top; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover { background: #fafcff; }
+.number { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.period { white-space: nowrap; }
+.period strong { display: block; color: var(--ink); font-weight: 800; }
+.amount-row td { padding-top: 18px; padding-bottom: 18px; vertical-align: middle; }
+.amount strong { color: var(--ink); font-size: .96rem; font-variant-numeric: tabular-nums; }
+.details-row td { padding: 13px 16px 17px; background: #f7f9fc; border-bottom: 2px solid #d8e0ea; }
+.details-label { margin-bottom: 7px; color: #617087; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.children-detail-grid { display: grid; gap: 0; }
+.child-status { display: grid; grid-template-columns: 90px minmax(170px, 220px) minmax(520px, 1fr); align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px dashed #dbe3ed; }
+.child-status:first-child { padding-top: 0; }
+.child-status:last-child { padding-bottom: 0; border-bottom: 0; }
+.child-status .child-age { color: var(--muted); white-space: nowrap; }
+.child-status small { color: #45546a; font-size: .8rem; line-height: 1.45; }
+.child-status.muted { opacity: .58; }
+.delta.saves { color: var(--positive); font-weight: 800; }
+.delta.costs { color: var(--negative); font-weight: 800; }
+.delta.neutral { color: var(--muted); }
+.total-cell { background: rgba(237,242,247,.45); }
+
+.compact-table-section { margin-top: 30px; }
+.compact-table-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 12px; }
+.compact-table-heading h3 { margin: 3px 0 0; font-size: 1.25rem; }
+.compact-table-actions { min-height: 48px; display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.copy-button { min-height: 42px; }
+.copy-status { min-width: 105px; color: var(--positive); font-size: .84rem; font-weight: 750; }
+.compact-table-section .table-intro { margin-top: 0; }
+.compact-table-wrap tbody tr:hover { background: #f7faff; }
+
+.detail-view { margin-top: 26px; border: 1px solid var(--line); border-radius: 12px; background: #fbfcfe; overflow: hidden; }
+.detail-view > summary { position: relative; padding: 16px 48px 16px 18px; cursor: pointer; list-style: none; color: var(--navy); background: #f4f7fb; font-weight: 800; }
+.detail-view > summary::-webkit-details-marker { display: none; }
+.detail-view > summary::after { content: "+"; position: absolute; top: 50%; right: 19px; transform: translateY(-50%); font-size: 1.35rem; line-height: 1; }
+.detail-view[open] > summary::after { content: "−"; }
+.detail-view > summary span, .detail-view > summary small { display: block; }
+.detail-view > summary small { margin-top: 2px; color: var(--muted); font-size: .8rem; font-weight: 500; }
+.detail-view-content { padding: 16px; }
+
+.rules-box { margin-top: 24px; border: 1px solid var(--line); border-radius: 11px; background: #fafbfd; }
+.rules-box summary { padding: 15px 17px; cursor: pointer; color: var(--navy); font-weight: 800; }
+.rules-content { padding: 2px 20px 22px; color: #4e5d71; font-size: .89rem; }
+.rules-content p { margin-top: 0; }
+.rules-content li + li { margin-top: 7px; }
+.rules-content section { padding: 15px 0; border-top: 1px solid #e2e7ee; }
+.rules-content section:first-child { border-top: 0; }
+.rules-content h4 { margin: 0 0 8px; color: var(--ink); font-size: 1rem; }
+.rules-content ul { margin: 0; padding-left: 21px; }
+.rate-tables { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.4fr); gap: 16px; align-items: start; }
+.rate-table { min-width: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: .78rem; }
+.rate-table caption { padding: 9px 10px; color: white; background: var(--navy); font-size: .85rem; font-weight: 800; text-align: left; }
+.rate-table th { padding: 8px 9px; font-size: .68rem; }
+.rate-table td { padding: 7px 9px; vertical-align: middle; }
+.rate-table th:not(:first-child), .rate-table td:not(:first-child) { text-align: right; white-space: nowrap; }
+footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718096; font-size: .78rem; text-align: center; }
+
+@media (max-width: 1050px) {
+  .children-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .scroll-hint { display: block; }
+}
+
+@media (max-width: 680px) {
+  .topbar { min-height: 84px; padding: 17px 18px; }
+  .local-badge { width: 10px; height: 10px; padding: 0; border: 0; overflow: hidden; }
+  .local-dot { flex: none; }
+  main { width: min(100% - 20px, 1480px); margin-top: 18px; }
+  .workspace, .results { padding: 22px 16px; border-radius: 14px; }
+  .section-heading { display: block; margin-bottom: 22px; }
+  .section-note { margin-top: 10px; text-align: left; }
+  .primary-inputs, .children-grid, .summary-grid { grid-template-columns: 1fr; }
+  .children-header { display: block; }
+  .children-header p { margin-top: 4px; }
+  .form-actions { align-items: stretch; flex-direction: column-reverse; }
+  .button { width: 100%; justify-content: center; }
+  .example-menu, .example-menu > summary { width: 100%; }
+  .example-options { position: static; width: 100%; margin-top: 8px; box-shadow: 0 8px 24px rgba(20,35,60,.12); }
+  .summary-card { min-height: 120px; }
+  .table-intro { display: block; }
+  .compact-table-heading { display: block; }
+  .compact-table-actions { margin-top: 10px; justify-content: flex-start; }
+  .scroll-hint { margin-top: 3px !important; }
+  .child-status { grid-template-columns: 82px 1fr; gap: 3px 10px; }
+  .child-status small { grid-column: 1 / -1; }
+  .rate-tables { grid-template-columns: 1fr; }
+}
+
+@media print {
+  :root { background: white; }
+  body { background: white; font-size: 10pt; }
+  .topbar { min-height: auto; padding: 12px 0; color: var(--ink); background: white; box-shadow: none; border-bottom: 2px solid var(--navy); }
+  .brand-mark, .local-badge, .workspace, .print-button, .compact-table-actions, .detail-view, footer, .rules-box { display: none !important; }
+  main { width: 100%; margin: 16px 0; }
+  .results { margin: 0; padding: 0; border: 0; box-shadow: none; }
+  .summary-card { min-height: auto; padding: 12px; break-inside: avoid; }
+  .summary-card strong { font-size: 18pt; }
+  .table-wrap { overflow: visible; border-color: #bbb; }
+  table { min-width: 100%; font-size: 7pt; }
+  th, td { padding: 6px 5px; }
+  .child-status { grid-template-columns: 65px 130px 1fr; gap: 5px; }
+}
+
+</style>
+    <script>
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  if (root) root.KitaCalculator = api;
+})(typeof window !== "undefined" ? window : globalThis, function () {
+  "use strict";
+
+  const OLD_BRACKETS = [
+    { min: 0, maxExclusive: 33000, young: 0, older: 0 },
+    { min: 33000, maxExclusive: 37000, young: 106, older: 61 },
+    { min: 37000, maxExclusive: 50000, young: 178, older: 102 },
+    { min: 50000, maxExclusive: 62000, young: 266, older: 152 },
+    { min: 62000, maxExclusive: 75000, young: 370, older: 212 },
+    { min: 75000, maxExclusive: 87000, young: 491, older: 281 },
+    { min: 87000, maxExclusive: 100000, young: 629, older: 359 },
+    { min: 100000, maxExclusive: Infinity, young: 725, older: 415 },
+  ];
+
+  const NEW_BRACKETS = [
+    { maxInclusive: 36000, young: 0, older: 0 },
+    { maxInclusive: 43000, young: 122, older: 82 },
+    { maxInclusive: 50000, young: 153, older: 102 },
+    { maxInclusive: 56000, young: 190, older: 127 },
+    { maxInclusive: 62000, young: 228, older: 152 },
+    { maxInclusive: 75000, young: 317, older: 212 },
+    { maxInclusive: 87000, young: 421, older: 281 },
+    { maxInclusive: 100000, young: 550, older: 366 },
+    { maxInclusive: 112000, young: 634, older: 423 },
+    { maxInclusive: 125000, young: 659, older: 440 },
+    { maxInclusive: 150000, young: 686, older: 458 },
+    { maxInclusive: 175000, young: 713, older: 476 },
+    { maxInclusive: Infinity, young: 742, older: 495 },
+  ];
+
+  function parseDate(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || "");
+    if (!match) throw new Error("Ungültiges Datum: " + value);
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+      throw new Error("Ungültiges Datum: " + value);
+    }
+    return { year, month, day };
+  }
+
+  function monthIndex(year, month) {
+    return year * 12 + month - 1;
+  }
+
+  function fromMonthIndex(index) {
+    return { year: Math.floor(index / 12), month: (index % 12) + 1 };
+  }
+
+  function ageInMonths(birth, month) {
+    return month - monthIndex(birth.year, birth.month);
+  }
+
+  function freeStartMonth(birth) {
+    const summerChild = birth.month <= 9;
+    return monthIndex(birth.year + (summerChild ? 4 : 5), 8);
+  }
+
+  function exitMonth(birth) {
+    return freeStartMonth(birth) + 23;
+  }
+
+  function oldRate(income, category) {
+    const bracket = OLD_BRACKETS.find((item) => income >= item.min && income < item.maxExclusive);
+    return category === "U2" ? bracket.young : bracket.older;
+  }
+
+  function newRate(income, category) {
+    const bracket = NEW_BRACKETS.find((item) => income <= item.maxInclusive);
+    return category === "U3" ? bracket.young : bracket.older;
+  }
+
+  function childBaseState(child, month, income, statute) {
+    const entered = month >= child.entryMonth;
+    const left = month > child.exitMonth;
+    const active = entered && !left;
+    const free = active && month >= child.freeStartMonth;
+    const ageMonths = ageInMonths(child.birth, month);
+    let category = null;
+    let base = 0;
+
+    if (active && !free) {
+      if (statute === "old") {
+        category = ageMonths <= 24 ? "U2" : "Ü2";
+        base = oldRate(income, category);
+      } else {
+        category = ageMonths <= 36 ? "U3" : "Ü3";
+        base = newRate(income, category);
+      }
+    }
+
+    return {
+      id: child.id,
+      name: child.name,
+      birth: child.birth,
+      ageMonths,
+      active,
+      entered,
+      left,
+      free,
+      category,
+      base,
+      charged: 0,
+      role: active ? (free ? "Beitragsfreie Jahre" : "") : (left ? "Kita beendet" : "Noch nicht gestartet"),
+    };
+  }
+
+  function orderPayingChildren(states) {
+    return states
+      .filter((state) => state.active && !state.free)
+      .sort((a, b) => b.base - a.base || a.birth.year - b.birth.year || a.birth.month - b.birth.month || a.birth.day - b.birth.day || a.id - b.id);
+  }
+
+  function applyOldSiblingRule(states) {
+    const active = states.filter((state) => state.active);
+    const freeCount = active.filter((state) => state.free).length;
+    const paying = orderPayingChildren(states);
+
+    if (freeCount > 0) {
+      paying.forEach((state) => { state.role = "Geschwisterregel · 0 %"; });
+    } else if (paying.length) {
+      paying[0].charged = paying[0].base;
+      paying[0].role = "Höchster Beitrag · 100 %";
+      paying.slice(1).forEach((state) => { state.role = "Geschwisterregel · 0 %"; });
+    }
+    return states;
+  }
+
+  function applyNewSiblingRule(states) {
+    const active = states.filter((state) => state.active);
+    const freeCount = active.filter((state) => state.free).length;
+    const paying = orderPayingChildren(states);
+
+    paying.forEach((state, index) => {
+      const siblingPosition = freeCount + index;
+      if (siblingPosition === 0) {
+        state.charged = state.base;
+        state.role = "Höchster Beitrag · 100 %";
+      } else if (siblingPosition === 1) {
+        state.charged = state.base * 0.25;
+        state.role = "Zweitkind · 25 %";
+      } else {
+        state.role = "Weiteres Kind · 0 %";
+      }
+    });
+    return states;
+  }
+
+  function evaluateMonth(month, children, income) {
+    const oldChildren = applyOldSiblingRule(children.map((child) => childBaseState(child, month, income, "old")));
+    const newChildren = applyNewSiblingRule(children.map((child) => childBaseState(child, month, income, "new")));
+    const oldTotal = oldChildren.reduce((sum, child) => sum + child.charged, 0);
+    const newTotal = newChildren.reduce((sum, child) => sum + child.charged, 0);
+    return { month, oldTotal, newTotal, difference: newTotal - oldTotal, oldChildren, newChildren };
+  }
+
+  function stateKey(monthResult) {
+    const childKey = (children) => children.map((child) => [
+      child.active,
+      child.free,
+      child.category || "-",
+      child.base,
+      child.charged,
+      child.role,
+    ].join(":"));
+    return JSON.stringify([
+      monthResult.oldTotal,
+      monthResult.newTotal,
+      childKey(monthResult.oldChildren),
+      childKey(monthResult.newChildren),
+    ]);
+  }
+
+  function normalizeChildren(children) {
+    return children.map((child, index) => {
+      const birth = typeof child.birth === "string" ? parseDate(child.birth) : child.birth;
+      const entry = typeof child.entry === "string" ? parseDate(child.entry) : child.entry;
+      const normalized = {
+        id: child.id || index + 1,
+        name: child.name || "Kind " + (index + 1),
+        birth,
+        entry,
+        entryMonth: monthIndex(entry.year, entry.month),
+        freeStartMonth: freeStartMonth(birth),
+        exitMonth: exitMonth(birth),
+      };
+      if (normalized.entryMonth > normalized.exitMonth) {
+        throw new Error(normalized.name + ": Der Kita-Start liegt nach dem errechneten Kita-Ende.");
+      }
+      if (normalized.entryMonth < monthIndex(birth.year, birth.month)) {
+        throw new Error(normalized.name + ": Der Kita-Start liegt vor der Geburt.");
+      }
+      return normalized;
+    });
+  }
+
+  function calculate(input) {
+    const income = Number(input.income);
+    const startYear = Number(input.startYear);
+    if (!Number.isFinite(income) || income < 0) throw new Error("Bitte ein gültiges, nicht negatives Einkommen eingeben.");
+    if (!Number.isInteger(startYear) || startYear < 2000 || startYear > 2200) throw new Error("Bitte ein gültiges Startjahr eingeben.");
+    if (!Array.isArray(input.children) || input.children.length === 0) throw new Error("Bitte mindestens ein Kind vollständig eintragen.");
+
+    const children = normalizeChildren(input.children);
+    const startMonth = monthIndex(startYear, 8);
+    const endMonth = Math.max(...children.map((child) => child.exitMonth));
+    if (startMonth > endMonth) throw new Error("Im gewählten Startjahr ist keines der Kinder mehr in der Kita.");
+
+    const months = [];
+    for (let month = startMonth; month <= endMonth; month += 1) {
+      months.push(evaluateMonth(month, children, income));
+    }
+
+    const sections = [];
+    months.forEach((monthResult) => {
+      const key = stateKey(monthResult);
+      const previous = sections[sections.length - 1];
+      if (!previous || previous.key !== key) {
+        sections.push({
+          key,
+          startMonth: monthResult.month,
+          endMonth: monthResult.month,
+          monthCount: 1,
+          oldMonthly: monthResult.oldTotal,
+          newMonthly: monthResult.newTotal,
+          differenceMonthly: monthResult.difference,
+          oldChildren: monthResult.oldChildren,
+          newChildren: monthResult.newChildren,
+        });
+      } else {
+        previous.endMonth = monthResult.month;
+        previous.monthCount += 1;
+      }
+    });
+
+    sections.forEach((section) => {
+      section.oldTotal = section.oldMonthly * section.monthCount;
+      section.newTotal = section.newMonthly * section.monthCount;
+      section.differenceTotal = section.newTotal - section.oldTotal;
+    });
+
+    const oldTotal = sections.reduce((sum, section) => sum + section.oldTotal, 0);
+    const newTotal = sections.reduce((sum, section) => sum + section.newTotal, 0);
+    return {
+      income,
+      startYear,
+      children,
+      startMonth,
+      endMonth,
+      sections,
+      oldTotal,
+      newTotal,
+      difference: newTotal - oldTotal,
+    };
+  }
+
+  return {
+    OLD_BRACKETS,
+    NEW_BRACKETS,
+    parseDate,
+    monthIndex,
+    fromMonthIndex,
+    ageInMonths,
+    freeStartMonth,
+    exitMonth,
+    oldRate,
+    newRate,
+    calculate,
+  };
+});
+
+</script>
+    
+  </head>
+  <body>
+    <noscript>
+      <div class="error-message noscript-message">JavaScript ist deaktiviert. Bitte diese Datei in einem Browser mit aktiviertem JavaScript öffnen.</div>
+    </noscript>
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+      <div>
+        <p class="eyebrow">Familienplanung</p>
+        <h1>Kita-Beitragsvergleich</h1>
+      </div>
+      <div class="local-badge" title="Alle Daten bleiben in diesem Browser">
+        <span class="local-dot" aria-hidden="true"></span>
+        Lokal &amp; privat
+      </div>
+    </header>
+
+    <main>
+      <section class="workspace" aria-labelledby="eingaben-heading">
+        <div class="section-heading">
+          <div>
+            <p class="step-label">01 / Eingaben</p>
+            <h2 id="eingaben-heading">Familiensituation</h2>
+          </div>
+          <p class="section-note">Die Berechnung beginnt immer im August des gewählten Jahres.</p>
+        </div>
+
+        <form id="calculator-form" novalidate>
+          <div class="primary-inputs">
+            <label class="field income-field">
+              <span>Jahreseinkommen</span>
+              <span class="input-shell">
+                <input id="income" name="income" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 64.500" required />
+                <span class="suffix">€</span>
+              </span>
+            </label>
+            <label class="field year-field">
+              <span>Startjahr</span>
+              <input id="start-year" name="startYear" type="number" min="2000" max="2200" step="1" required />
+            </label>
+          </div>
+
+          <div class="children-header">
+            <h3>Kinder</h3>
+            <p>Mindestens ein Kind vollständig eintragen.</p>
+          </div>
+
+          <div class="children-grid" id="children-grid">
+            <fieldset class="child-card" data-child="1">
+              <legend><span>01</span> Kind 1</legend>
+              <button type="button" class="clear-child-button" id="clear-child-1" aria-label="Eintrag für Kind 1 löschen">× <span>Eintrag löschen</span></button>
+              <label class="field">
+                <span>Geburtstag</span>
+                <input name="birth-1" type="date" />
+              </label>
+              <label class="field">
+                <span>Kita-Startjahr (ab 1. August)</span>
+                <input name="entry-1" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
+              </label>
+            </fieldset>
+            <fieldset class="child-card" data-child="2">
+              <legend><span>02</span> Kind 2</legend>
+              <button type="button" class="clear-child-button" id="clear-child-2" aria-label="Eintrag für Kind 2 löschen">× <span>Eintrag löschen</span></button>
+              <label class="field">
+                <span>Geburtstag</span>
+                <input name="birth-2" type="date" />
+              </label>
+              <label class="field">
+                <span>Kita-Startjahr (ab 1. August)</span>
+                <input name="entry-2" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
+              </label>
+            </fieldset>
+            <fieldset class="child-card" data-child="3">
+              <legend><span>03</span> Kind 3</legend>
+              <button type="button" class="clear-child-button" id="clear-child-3" aria-label="Eintrag für Kind 3 löschen">× <span>Eintrag löschen</span></button>
+              <label class="field">
+                <span>Geburtstag</span>
+                <input name="birth-3" type="date" />
+              </label>
+              <label class="field">
+                <span>Kita-Startjahr (ab 1. August)</span>
+                <input name="entry-3" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
+              </label>
+            </fieldset>
+            <fieldset class="child-card" data-child="4">
+              <legend><span>04</span> Kind 4</legend>
+              <button type="button" class="clear-child-button" id="clear-child-4" aria-label="Eintrag für Kind 4 löschen">× <span>Eintrag löschen</span></button>
+              <label class="field">
+                <span>Geburtstag</span>
+                <input name="birth-4" type="date" />
+              </label>
+              <label class="field">
+                <span>Kita-Startjahr (ab 1. August)</span>
+                <input name="entry-4" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
+              </label>
+            </fieldset>
+          </div>
+
+          <div id="form-error" class="error-message" role="alert" hidden></div>
+          <div class="form-actions">
+            <details class="example-menu" id="example-menu">
+              <summary class="button secondary">Geprüftes Beispiel einsetzen <span aria-hidden="true">⌄</span></summary>
+              <div class="example-options" role="group" aria-label="Geprüftes Beispiel auswählen">
+                <button type="button" id="example-1">
+                  <strong>Beispiel 1 · Zwillinge</strong>
+                  <span>36.500 € · 2 Kinder</span>
+                </button>
+                <button type="button" id="example-2">
+                  <strong>Beispiel 2 · Drei Kinder</strong>
+                  <span>130.000 € · 3 Kinder</span>
+                </button>
+                <button type="button" id="example-3">
+                  <strong>Beispiel 3 · Sommer-/Winterkind</strong>
+                  <span>90.000 € · 2 Kinder</span>
+                </button>
+              </div>
+            </details>
+            <button type="submit" class="button primary" id="calculate-button">
+              Beiträge berechnen
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section id="results" class="results" aria-labelledby="results-heading" hidden>
+        <div class="section-heading results-heading">
+          <div>
+            <p class="step-label">02 / Vergleich</p>
+            <h2 id="results-heading">Ergebnis</h2>
+          </div>
+          <button type="button" class="print-button" id="print-button" aria-label="Ergebnis drucken">
+            <span aria-hidden="true">⎙</span> Drucken
+          </button>
+        </div>
+
+        <div class="summary-grid" aria-label="Gesamtergebnis">
+          <article class="summary-card old">
+            <p>Alte Satzung</p>
+            <strong id="old-total">–</strong>
+            <span>Gesamtkosten</span>
+          </article>
+          <article class="summary-card new">
+            <p>Neue Satzung</p>
+            <strong id="new-total">–</strong>
+            <span>Gesamtkosten</span>
+          </article>
+          <article class="summary-card difference" id="difference-card">
+            <p id="difference-label">Differenz</p>
+            <strong id="difference-total">–</strong>
+            <span id="difference-caption">Neue minus alte Satzung</span>
+          </article>
+          <article class="summary-card percentage" id="percentage-card">
+            <p id="percentage-label">Mehrkosten in %</p>
+            <strong id="percentage-total">–</strong>
+            <span id="percentage-caption">bezogen auf die alte Satzung</span>
+          </article>
+        </div>
+
+        <section class="compact-table-section" aria-labelledby="compact-table-heading">
+          <div class="compact-table-heading">
+            <div>
+              <p class="step-label">Übersicht</p>
+              <h3 id="compact-table-heading">Kompakte Beitragstabelle</h3>
+            </div>
+            <div class="compact-table-actions">
+              <button type="button" class="button secondary copy-button" id="copy-table-button">Tabelle kopieren</button>
+              <span id="copy-status" class="copy-status" role="status" aria-live="polite"></span>
+            </div>
+          </div>
+          <div class="table-intro">
+            <p id="result-description"></p>
+            <p class="scroll-hint">Tabelle seitlich verschiebbar</p>
+          </div>
+          <div class="table-wrap compact-table-wrap">
+            <table aria-label="Kompakte Beitragstabelle">
+              <thead>
+                <tr>
+                  <th scope="col">Zeitraum</th>
+                  <th scope="col" class="number">Monate</th>
+                  <th scope="col" class="number">Alt / Monat</th>
+                  <th scope="col" class="number">Neu / Monat</th>
+                  <th scope="col" class="number">Differenz / Monat</th>
+                  <th scope="col" class="number">Alt gesamt</th>
+                  <th scope="col" class="number">Neu gesamt</th>
+                  <th scope="col" class="number">Differenz gesamt</th>
+                </tr>
+              </thead>
+              <tbody id="compact-result-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <details class="detail-view" id="detail-view">
+          <summary>
+            <span>Detailansicht</span>
+            <small>Beiträge, Kinder, Alter und angewandte Regeln je Abschnitt</small>
+          </summary>
+          <div class="detail-view-content">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Zeitraum</th>
+                    <th scope="col" class="number">Monate</th>
+                    <th scope="col" class="number">Alt / Monat</th>
+                    <th scope="col" class="number">Neu / Monat</th>
+                    <th scope="col" class="number">Differenz / Monat</th>
+                    <th scope="col" class="number">Alt gesamt</th>
+                    <th scope="col" class="number">Neu gesamt</th>
+                    <th scope="col" class="number">Differenz gesamt</th>
+                  </tr>
+                </thead>
+                <tbody id="result-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        <details class="rules-box">
+          <summary>Berechnungsgrundlagen und Annahmen</summary>
+          <div class="rules-content">
+            <section>
+              <h4>Zeitraum und Betreuung</h4>
+              <ul>
+                <li>Die Berechnung beginnt am 1. August des gewählten Startjahres.</li>
+                <li>Der Kita-Start jedes Kindes wird automatisch auf den 1. August seines angegebenen Kita-Startjahres gesetzt. Vorher wird das Kind nicht berücksichtigt.</li>
+                <li>Die Berechnung endet mit dem letzten Kita-Monat des zuletzt ausscheidenden Kindes.</li>
+                <li>Alle Beiträge werden monatsgenau und centgenau berechnet. Ein Altersklassenwechsel gilt immer ab dem Monat nach dem maßgeblichen Geburtstag.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4>Beitragsfreie Jahre</h4>
+              <ul>
+                <li><strong>Sommerkinder</strong> haben vom 1. Januar bis 30. September Geburtstag. Sie sind ab August des Jahres beitragsfrei, in dem sie vier Jahre alt werden, und verlassen die Kita nach dem Juli des Jahres, in dem sie sechs Jahre alt werden.</li>
+                <li><strong>Winterkinder</strong> haben vom 1. Oktober bis 31. Dezember Geburtstag. Sie sind ab August des Kalenderjahres beitragsfrei, das auf das Jahr ihres vierten Geburtstags folgt, und verlassen die Kita nach dem Juli des Jahres, in dem sie sieben Jahre alt werden.</li>
+                <li>Damit umfassen die beitragsfreien Jahre bei Sommer- und Winterkindern jeweils genau 24 Monate.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4>Alte Satzung</h4>
+              <ul>
+                <li>Bis einschließlich des Monats des zweiten Geburtstags gilt der U2-Beitrag. Ab dem Folgemonat gilt der Ü2-Beitrag.</li>
+                <li>Sind mehrere Kinder gleichzeitig in der Kita und noch nicht in den beitragsfreien Jahren, wird nur der höchste ihrer Beiträge erhoben. Die weiteren Kinder zahlen 0 %.</li>
+                <li>Ist mindestens eines der gleichzeitig betreuten Kinder in den beitragsfreien Jahren, sind auch seine Geschwister beitragsfrei. Der Familienbeitrag beträgt dann 0 €.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4>Neue Satzung</h4>
+              <ul>
+                <li>Bis einschließlich des Monats des dritten Geburtstags gilt der U3-Beitrag. Ab dem Folgemonat gilt der Ü3-Beitrag.</li>
+                <li>Das Kind mit dem höchsten Beitrag zahlt 100 %. Das zweite Kind zahlt 25 % seines eigenen Beitrags. Das dritte und jedes weitere Kind zahlen 0 %.</li>
+                <li>Ein Kind in den beitragsfreien Jahren belegt weiterhin einen Geschwisterplatz: Das erste noch zahlungspflichtige Geschwisterkind zahlt dann 25 %, weitere Geschwister zahlen 0 %.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4>Ergebnis und Abschnitte</h4>
+              <ul>
+                <li>Die Detailansicht beginnt einen neuen Abschnitt, sobald sich Beitrag, Altersklasse, Kita-Status oder Geschwisterrolle mindestens eines Kindes ändert.</li>
+                <li>Die kompakte Tabelle fasst direkt aufeinanderfolgende Detailabschnitte zusammen, wenn die Monatsbeiträge nach beiden Satzungen gleich bleiben.</li>
+                <li>Abschnittssumme = Monatsbeitrag × Anzahl der Monate. Differenz = neue Satzung minus alte Satzung.</li>
+                <li>Mehrkosten in Prozent = Differenz ÷ Gesamtkosten der alten Satzung × 100. Bei 0 € Ausgangskosten ist kein Prozentwert berechenbar.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4>Beitragstabellen</h4>
+              <div class="rate-tables">
+                <table class="rate-table">
+                  <caption>Alte Satzung</caption>
+                  <thead><tr><th>Einkommen</th><th>U2</th><th>Ü2</th></tr></thead>
+                  <tbody>
+                    <tr><td>0 bis unter 33.000 €</td><td>0 €</td><td>0 €</td></tr>
+                    <tr><td>33.000 bis unter 37.000 €</td><td>106 €</td><td>61 €</td></tr>
+                    <tr><td>37.000 bis unter 50.000 €</td><td>178 €</td><td>102 €</td></tr>
+                    <tr><td>50.000 bis unter 62.000 €</td><td>266 €</td><td>152 €</td></tr>
+                    <tr><td>62.000 bis unter 75.000 €</td><td>370 €</td><td>212 €</td></tr>
+                    <tr><td>75.000 bis unter 87.000 €</td><td>491 €</td><td>281 €</td></tr>
+                    <tr><td>87.000 bis unter 100.000 €</td><td>629 €</td><td>359 €</td></tr>
+                    <tr><td>ab 100.000 €</td><td>725 €</td><td>415 €</td></tr>
+                  </tbody>
+                </table>
+                <table class="rate-table">
+                  <caption>Neue Satzung</caption>
+                  <thead><tr><th>Einkommen</th><th>U3</th><th>Ü3</th></tr></thead>
+                  <tbody>
+                    <tr><td>bis 36.000 €</td><td>0 €</td><td>0 €</td></tr>
+                    <tr><td>36.000,01 bis 43.000 €</td><td>122 €</td><td>82 €</td></tr>
+                    <tr><td>43.000,01 bis 50.000 €</td><td>153 €</td><td>102 €</td></tr>
+                    <tr><td>50.000,01 bis 56.000 €</td><td>190 €</td><td>127 €</td></tr>
+                    <tr><td>56.000,01 bis 62.000 €</td><td>228 €</td><td>152 €</td></tr>
+                    <tr><td>62.000,01 bis 75.000 €</td><td>317 €</td><td>212 €</td></tr>
+                    <tr><td>75.000,01 bis 87.000 €</td><td>421 €</td><td>281 €</td></tr>
+                    <tr><td>87.000,01 bis 100.000 €</td><td>550 €</td><td>366 €</td></tr>
+                    <tr><td>100.000,01 bis 112.000 €</td><td>634 €</td><td>423 €</td></tr>
+                    <tr><td>112.000,01 bis 125.000 €</td><td>659 €</td><td>440 €</td></tr>
+                    <tr><td>125.000,01 bis 150.000 €</td><td>686 €</td><td>458 €</td></tr>
+                    <tr><td>150.000,01 bis 175.000 €</td><td>713 €</td><td>476 €</td></tr>
+                    <tr><td>über 175.000 €</td><td>742 €</td><td>495 €</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <footer>
+      <p>Die Berechnung ist eine Planungshilfe. Maßgeblich bleibt der Bescheid des zuständigen Trägers.</p>
+    </footer>
+  <script>
+(function () {
+  "use strict";
+
+  document.documentElement.classList.add("js-ready");
+
+  const form = document.getElementById("calculator-form");
+  const incomeInput = document.getElementById("income");
+  const startYearInput = document.getElementById("start-year");
+  const errorBox = document.getElementById("form-error");
+  const results = document.getElementById("results");
+  const resultBody = document.getElementById("result-body");
+  const compactResultBody = document.getElementById("compact-result-body");
+  const copyTableButton = document.getElementById("copy-table-button");
+  const copyStatus = document.getElementById("copy-status");
+  const euro = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
+  const percent = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const monthLabel = new Intl.DateTimeFormat("de-DE", { month: "short", year: "numeric", timeZone: "UTC" });
+  let lastCompactSections = [];
+  let copyStatusTimer = null;
+
+  startYearInput.value = new Date().getFullYear();
+
+  function parseIncome(value) {
+    let normalized = String(value).trim().replaceAll(" ", "").replaceAll("€", "").replaceAll("'", "");
+    normalized = normalized.replace(/[^0-9.,-]/g, "");
+    if (!normalized || normalized === "-") return NaN;
+
+    const commaCount = normalized.split(",").length - 1;
+    const dotCount = normalized.split(".").length - 1;
+    let decimalSeparator = null;
+
+    if (commaCount && dotCount) {
+      decimalSeparator = normalized.lastIndexOf(",") > normalized.lastIndexOf(".") ? "," : ".";
+    } else if (commaCount || dotCount) {
+      const separator = commaCount ? "," : ".";
+      const parts = normalized.split(separator);
+      if (parts.length === 2) {
+        decimalSeparator = parts[1].length === 3 ? null : separator;
+      } else {
+        const allThousands = parts.slice(1).every((part) => part.length === 3);
+        decimalSeparator = allThousands ? null : separator;
+      }
+    }
+
+    if (decimalSeparator) {
+      const decimalPosition = normalized.lastIndexOf(decimalSeparator);
+      const integerPart = normalized.slice(0, decimalPosition).replace(/[.,]/g, "");
+      const decimalPart = normalized.slice(decimalPosition + 1).replace(/[.,]/g, "");
+      normalized = integerPart + "." + decimalPart;
+    } else {
+      normalized = normalized.replace(/[.,]/g, "");
+    }
+    return Number(normalized);
+  }
+
+  function formatMonth(index) {
+    const value = KitaCalculator.fromMonthIndex(index);
+    return monthLabel.format(new Date(Date.UTC(value.year, value.month - 1, 1))).replace("Sept", "Sep");
+  }
+
+  function formatAge(totalMonths) {
+    if (totalMonths < 0) return "noch nicht geboren";
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+    if (years === 0) return months + (months === 1 ? " Monat" : " Monate");
+    if (months === 0) return years + (years === 1 ? " Jahr" : " Jahre");
+    return years + " J. " + months + " Mon.";
+  }
+
+  function getChildren() {
+    const children = [];
+    for (let index = 1; index <= 4; index += 1) {
+      const birth = form.elements["birth-" + index].value;
+      const entryYearText = String(form.elements["entry-" + index].value).trim();
+      if (!birth && !entryYearText) continue;
+      if (!birth || !entryYearText) throw new Error("Bitte Geburtstag und Kita-Startjahr für Kind " + index + " vollständig eintragen.");
+      const entryYear = Number(entryYearText);
+      if (!Number.isInteger(entryYear) || entryYear < 2000 || entryYear > 2200) {
+        throw new Error("Bitte für Kind " + index + " ein gültiges Kita-Startjahr eingeben.");
+      }
+      children.push({ id: index, name: "Kind " + index, birth, entry: entryYear + "-08-01" });
+    }
+    return children;
+  }
+
+  function statusFor(oldState, newState) {
+    if (!oldState.active) return oldState.role;
+    if (oldState.free) return "Beitragsfreie Jahre";
+    return "Alt: " + oldState.category + " · Basis " + euro.format(oldState.base) + " · " + oldState.role + " = " + euro.format(oldState.charged) +
+      " | Neu: " + newState.category + " · Basis " + euro.format(newState.base) + " · " + newState.role + " = " + euro.format(newState.charged);
+  }
+
+  function childCell(section) {
+    return section.oldChildren.map((oldState, index) => {
+      const newState = section.newChildren[index];
+      const startAge = KitaCalculator.ageInMonths(oldState.birth, section.startMonth);
+      const endAge = KitaCalculator.ageInMonths(oldState.birth, section.endMonth);
+      const ageText = startAge === endAge ? formatAge(startAge) : formatAge(startAge) + " → " + formatAge(endAge);
+      const inactiveClass = !oldState.active ? " muted" : "";
+      return '<div class="child-status' + inactiveClass + '">' +
+        '<strong>' + oldState.name + '</strong><span class="child-age">' + ageText + '</span>' +
+        '<small>' + statusFor(oldState, newState) + '</small>' +
+        '</div>';
+    }).join("");
+  }
+
+  function differenceClass(value) {
+    if (value < 0) return "saves";
+    if (value > 0) return "costs";
+    return "neutral";
+  }
+
+  function compactContributionSections(sections) {
+    return sections.reduce((compacted, section) => {
+      const previous = compacted[compacted.length - 1];
+      const sameContribution = previous &&
+        previous.endMonth + 1 === section.startMonth &&
+        previous.oldMonthly === section.oldMonthly &&
+        previous.newMonthly === section.newMonthly;
+
+      if (sameContribution) {
+        previous.endMonth = section.endMonth;
+        previous.monthCount += section.monthCount;
+        previous.oldTotal += section.oldTotal;
+        previous.newTotal += section.newTotal;
+        previous.differenceTotal += section.differenceTotal;
+      } else {
+        compacted.push({
+          startMonth: section.startMonth,
+          endMonth: section.endMonth,
+          monthCount: section.monthCount,
+          oldMonthly: section.oldMonthly,
+          newMonthly: section.newMonthly,
+          differenceMonthly: section.differenceMonthly,
+          oldTotal: section.oldTotal,
+          newTotal: section.newTotal,
+          differenceTotal: section.differenceTotal,
+        });
+      }
+      return compacted;
+    }, []);
+  }
+
+  function compactTableText(sections) {
+    const rows = [[
+      "Zeitraum", "Monate", "Alt / Monat", "Neu / Monat", "Differenz / Monat",
+      "Alt gesamt", "Neu gesamt", "Differenz gesamt",
+    ]];
+    sections.forEach((section) => {
+      rows.push([
+        formatMonth(section.startMonth) + " bis " + formatMonth(section.endMonth),
+        String(section.monthCount),
+        euro.format(section.oldMonthly),
+        euro.format(section.newMonthly),
+        euro.format(section.differenceMonthly),
+        euro.format(section.oldTotal),
+        euro.format(section.newTotal),
+        euro.format(section.differenceTotal),
+      ]);
+    });
+    return rows.map((row) => row.join("\t")).join("\n");
+  }
+
+  function showCopyStatus(message) {
+    copyStatus.textContent = message;
+    if (copyStatusTimer) clearTimeout(copyStatusTimer);
+    copyStatusTimer = setTimeout(function () { copyStatus.textContent = ""; }, 2500);
+  }
+
+  function fallbackCopy(text) {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    if (!copied) throw new Error("Kopieren nicht möglich");
+  }
+
+  function copyCompactTable() {
+    if (!lastCompactSections.length) return;
+    const text = compactTableText(lastCompactSections);
+    if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(function () { showCopyStatus("Tabelle kopiert"); })
+        .catch(function () {
+          try {
+            fallbackCopy(text);
+            showCopyStatus("Tabelle kopiert");
+          } catch (error) {
+            showCopyStatus("Kopieren nicht möglich");
+          }
+        });
+    } else {
+      try {
+        fallbackCopy(text);
+        showCopyStatus("Tabelle kopiert");
+      } catch (error) {
+        showCopyStatus("Kopieren nicht möglich");
+      }
+    }
+  }
+
+  window.KitaApp = { parseIncome, compactContributionSections, compactTableText };
+
+  function render(result) {
+    const compactSections = compactContributionSections(result.sections);
+    lastCompactSections = compactSections;
+    document.getElementById("old-total").textContent = euro.format(result.oldTotal);
+    document.getElementById("new-total").textContent = euro.format(result.newTotal);
+    const differenceCard = document.getElementById("difference-card");
+    differenceCard.classList.remove("saves", "costs", "neutral");
+    differenceCard.classList.add(differenceClass(result.difference));
+
+    const differenceTotal = document.getElementById("difference-total");
+    const differenceLabel = document.getElementById("difference-label");
+    const differenceCaption = document.getElementById("difference-caption");
+    differenceTotal.textContent = euro.format(Math.abs(result.difference));
+    if (result.difference < 0) {
+      differenceLabel.textContent = "Ersparnis";
+      differenceCaption.textContent = "durch die neue Satzung";
+    } else if (result.difference > 0) {
+      differenceLabel.textContent = "Mehrkosten";
+      differenceCaption.textContent = "durch die neue Satzung";
+    } else {
+      differenceLabel.textContent = "Keine Differenz";
+      differenceCaption.textContent = "beide Satzungen sind gleich";
+    }
+
+    const percentageCard = document.getElementById("percentage-card");
+    const percentageTotal = document.getElementById("percentage-total");
+    const percentageLabel = document.getElementById("percentage-label");
+    const percentageCaption = document.getElementById("percentage-caption");
+    percentageCard.classList.remove("saves", "costs", "neutral");
+    percentageCard.classList.add(differenceClass(result.difference));
+    if (result.oldTotal > 0) {
+      const percentageDifference = result.difference / result.oldTotal * 100;
+      percentageTotal.textContent = percent.format(Math.abs(percentageDifference)) + " %";
+      percentageLabel.textContent = percentageDifference > 0 ? "Mehrkosten in %" : percentageDifference < 0 ? "Ersparnis in %" : "Veränderung in %";
+      percentageCaption.textContent = "bezogen auf die alte Satzung";
+    } else if (result.newTotal === 0) {
+      percentageTotal.textContent = "0,0 %";
+      percentageLabel.textContent = "Veränderung in %";
+      percentageCaption.textContent = "beide Satzungen ergeben 0 €";
+    } else {
+      percentageTotal.textContent = "nicht berechenbar";
+      percentageLabel.textContent = "Mehrkosten in %";
+      percentageCaption.textContent = "kein Prozentwert bei 0 € Ausgangskosten";
+    }
+
+    document.getElementById("result-description").textContent =
+      "Erkanntes Jahreseinkommen: " + euro.format(result.income) + " · " +
+      compactSections.length + (compactSections.length === 1 ? " Beitragsabschnitt" : " Beitragsabschnitte") +
+      " von " + formatMonth(result.startMonth) + " bis " + formatMonth(result.endMonth);
+
+    resultBody.innerHTML = result.sections.map((section) => {
+      const differenceMonthly = section.differenceMonthly;
+      const differenceTotalValue = section.differenceTotal;
+      return '<tr class="amount-row">' +
+        '<td class="period"><strong>' + formatMonth(section.startMonth) + " bis " + formatMonth(section.endMonth) + "</strong></td>" +
+        '<td class="number">' + section.monthCount + "</td>" +
+        '<td class="number amount"><strong>' + euro.format(section.oldMonthly) + "</strong></td>" +
+        '<td class="number amount"><strong>' + euro.format(section.newMonthly) + "</strong></td>" +
+        '<td class="number amount delta ' + differenceClass(differenceMonthly) + '"><strong>' + euro.format(differenceMonthly) + "</strong></td>" +
+        '<td class="number amount total-cell"><strong>' + euro.format(section.oldTotal) + "</strong></td>" +
+        '<td class="number amount total-cell"><strong>' + euro.format(section.newTotal) + "</strong></td>" +
+        '<td class="number amount delta total-cell ' + differenceClass(differenceTotalValue) + '"><strong>' + euro.format(differenceTotalValue) + "</strong></td>" +
+        "</tr>" +
+        '<tr class="details-row"><td colspan="8"><div class="details-label">Kinder und Alter</div><div class="children-detail-grid">' + childCell(section) + "</div></td></tr>";
+    }).join("");
+
+    compactResultBody.innerHTML = compactSections.map((section) => {
+      return '<tr class="amount-row">' +
+        '<td class="period"><strong>' + formatMonth(section.startMonth) + " bis " + formatMonth(section.endMonth) + "</strong></td>" +
+        '<td class="number">' + section.monthCount + "</td>" +
+        '<td class="number amount"><strong>' + euro.format(section.oldMonthly) + "</strong></td>" +
+        '<td class="number amount"><strong>' + euro.format(section.newMonthly) + "</strong></td>" +
+        '<td class="number amount delta ' + differenceClass(section.differenceMonthly) + '"><strong>' + euro.format(section.differenceMonthly) + "</strong></td>" +
+        '<td class="number amount total-cell"><strong>' + euro.format(section.oldTotal) + "</strong></td>" +
+        '<td class="number amount total-cell"><strong>' + euro.format(section.newTotal) + "</strong></td>" +
+        '<td class="number amount delta total-cell ' + differenceClass(section.differenceTotal) + '"><strong>' + euro.format(section.differenceTotal) + "</strong></td>" +
+        "</tr>";
+    }).join("");
+
+    results.hidden = false;
+    results.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    errorBox.hidden = true;
+    try {
+      const result = KitaCalculator.calculate({
+        income: parseIncome(incomeInput.value),
+        startYear: Number(startYearInput.value),
+        children: getChildren(),
+      });
+      render(result);
+    } catch (error) {
+      results.hidden = true;
+      errorBox.textContent = error.message;
+      errorBox.hidden = false;
+      errorBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
+
+  window.addEventListener("error", function () {
+    errorBox.textContent = "Die Anwendung konnte nicht vollständig geladen werden. Bitte die Datei Kita-Beitragsrechner.html direkt in Safari, Chrome, Edge oder Firefox öffnen.";
+    errorBox.hidden = false;
+  });
+
+  const referenceExamples = {
+    1: {
+      income: "36.500",
+      startYear: "2026",
+      children: [
+        ["2025-08-05", "2026"],
+        ["2025-08-05", "2026"],
+      ],
+    },
+    2: {
+      income: "130.000",
+      startYear: "2026",
+      children: [
+        ["2025-06-05", "2026"],
+        ["2025-06-05", "2026"],
+        ["2024-01-06", "2026"],
+      ],
+    },
+    3: {
+      income: "90.000",
+      startYear: "2026",
+      children: [
+        ["2024-12-15", "2026"],
+        ["2023-03-20", "2026"],
+      ],
+    },
+  };
+
+  function applyReferenceExample(exampleNumber) {
+    const example = referenceExamples[exampleNumber];
+    incomeInput.value = example.income;
+    startYearInput.value = example.startYear;
+    for (let index = 1; index <= 4; index += 1) {
+      const child = example.children[index - 1] || ["", ""];
+      form.elements["birth-" + index].value = child[0];
+      form.elements["entry-" + index].value = child[1];
+    }
+    document.getElementById("example-menu").open = false;
+    form.requestSubmit();
+  }
+
+  for (let exampleNumber = 1; exampleNumber <= 3; exampleNumber += 1) {
+    document.getElementById("example-" + exampleNumber).addEventListener("click", function () {
+      applyReferenceExample(exampleNumber);
+    });
+  }
+
+  for (let index = 1; index <= 4; index += 1) {
+    document.getElementById("clear-child-" + index).addEventListener("click", function () {
+      form.elements["birth-" + index].value = "";
+      form.elements["entry-" + index].value = "";
+      if (typeof form.elements["birth-" + index].focus === "function") {
+        form.elements["birth-" + index].focus();
+      }
+    });
+  }
+
+  copyTableButton.addEventListener("click", copyCompactTable);
+
+  document.getElementById("print-button").addEventListener("click", function () {
+    window.print();
+  });
+})();
+
+</script>
+</body>
+</html>
