@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 
-const html = fs.readFileSync("Kita-Beitragsrechner.html", "utf8");
+const html = fs.readFileSync("Kitabeitragsrechner_3.0.html", "utf8");
 const formPosition = html.indexOf('<form id="calculator-form"');
 const appPosition = html.indexOf('document.documentElement.classList.add("js-ready")');
 const bodyEndPosition = html.indexOf("</body>");
@@ -26,3 +26,17 @@ assert.ok(
 );
 
 console.log("Einzeldatei wird in der richtigen Reihenfolge geladen.");
+
+assert.ok(!html.includes('src="tariff-data.js"'), "Die Tarife müssen in der Einzeldatei enthalten sein.");
+assert.ok(html.includes('id="income"'), "Das gemeinsame Einkommensfeld fehlt.");
+assert.ok(!html.includes('id="taxable-income"'), "Das getrennte Feld darf nicht mehr vorhanden sein.");
+assert.ok(!html.includes('id="gross-income"'), "Das getrennte Bruttofeld darf nicht mehr vorhanden sein.");
+
+for (let index = 1; index <= 4; index++) {
+  const select = html.match(new RegExp('<select name="hours-' + index + '"[\\s\\S]*?</select>'));
+  assert.ok(select, "Betreuungszeit-Dropdown für Kind " + index + " fehlt.");
+  for (const hours of [15, 20, 25, 30, 35, 40, 45, 50]) {
+    assert.ok(select[0].includes('value="' + hours + '"'), "Stundenoption fehlt.");
+  }
+  assert.ok(select[0].includes('value="45" selected'), "Standard muss 45 Stunden sein.");
+}

@@ -1,5 +1,7 @@
 const assert = require("node:assert/strict");
-const calc = require("../dist/calculator.js");
+const original = require("../dist/calculator.js");
+// Die bisherigen Tests prüfen bewusst weiterhin nur den Kita-Zeitraum.
+const calc = { ...original, calculate: input => original.calculate({ ...input, includeOgs: false }) };
 
 function findSection(result, year, month) {
   const target = calc.monthIndex(year, month);
@@ -202,7 +204,7 @@ for (const income of [0, 33000, 36500, 50000, 62000, 90000, 130000, 180000]) {
   for (const birthMonth of [1, 6, 9, 10, 12]) {
     const birth = `2023-${String(birthMonth).padStart(2, "0")}-15`;
     const result = calc.calculate({
-      income,
+      income: income,
       startYear: 2025,
       children: [
         { birth, entry: "2025-08-01" },

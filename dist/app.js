@@ -78,7 +78,9 @@
       if (!Number.isInteger(entryYear) || entryYear < 2000 || entryYear > 2200) {
         throw new Error("Bitte für Kind " + index + " ein gültiges Kita-Startjahr eingeben.");
       }
-      children.push({ id: index, name: "Kind " + index, birth, entry: entryYear + "-08-01" });
+      const hoursText = form.elements["hours-" + index].value;
+      if (!hoursText) throw new Error("Bitte die Betreuungszeit für Kind " + index + " auswählen.");
+      children.push({ id: index, name: "Kind " + index, birth, entry: entryYear + "-08-01", hours: Number(hoursText) });
     }
     return children;
   }
@@ -99,9 +101,25 @@
       const inactiveClass = !oldState.active ? " muted" : "";
       return '<div class="child-status' + inactiveClass + '">' +
         '<strong>' + oldState.name + '</strong><span class="child-age">' + ageText + '</span>' +
-        '<small>' + statusFor(oldState, newState) + '</small>' +
+        '<small>' + (oldState.ogs ? 'OGS · ' : oldState.hours + ' Stunden/Woche · ') + statusFor(oldState, newState) + '</small>' +
         '</div>';
     }).join("");
+  }
+
+  function careDifferenceDetails(section) {
+    const sum = (states, ogs) => states.filter(child => child.ogs === ogs)
+      .reduce((total, child) => total + child.charged, 0);
+    const signedEuro = value => (value > 0 ? "+" : "") + euro.format(value);
+    const parts = [
+      ["Kita", sum(section.newChildren, false) - sum(section.oldChildren, false)],
+      ["OGS", sum(section.newChildren, true) - sum(section.oldChildren, true)],
+      ["Zusammen", section.differenceMonthly],
+    ];
+    return '<div class="care-difference-details" aria-label="So setzt sich die Differenz zusammen">' +
+      '<span class="care-difference-label">Differenz:</span>' + parts.map(([label, monthly]) =>
+        '<span class="care-difference-item"><strong>' + label + '</strong> <span class="' + differenceClass(monthly) + '">' +
+        signedEuro(monthly) + '/Monat</span> <small>(' + signedEuro(monthly * section.monthCount) +
+        ' im Abschnitt)</small></span>').join("") + '</div>';
   }
 
   function differenceClass(value) {
@@ -211,6 +229,19 @@
     lastCompactSections = compactSections;
     document.getElementById("old-total").textContent = euro.format(result.oldTotal);
     document.getElementById("new-total").textContent = euro.format(result.newTotal);
+    document.getElementById("care-summary-body").innerHTML = [
+      ["Kita", result.careTotals.kita],
+      ["OGS", result.careTotals.ogs],
+      ["Gesamt", result],
+    ].map(([label, totals]) => {
+      const signed = (value, format) => (value > 0 ? "+" : "") + format(value);
+      const percentage = totals.oldTotal > 0
+        ? signed(totals.difference / totals.oldTotal * 100, value => percent.format(value)) + " %"
+        : totals.newTotal === 0 ? "0,0 %" : "nicht berechenbar";
+      return '<tr class="amount-row"><th scope="row">' + label + '</th><td>' + euro.format(totals.oldTotal) +
+        '</td><td>' + euro.format(totals.newTotal) + '</td><td class="' + differenceClass(totals.difference) + '">' +
+        signed(totals.difference, value => euro.format(value)) + '</td><td>' + percentage + '</td></tr>';
+    }).join("");
     const differenceCard = document.getElementById("difference-card");
     differenceCard.classList.remove("saves", "costs", "neutral");
     differenceCard.classList.add(differenceClass(result.difference));
@@ -252,7 +283,7 @@
     }
 
     document.getElementById("result-description").textContent =
-      "Erkanntes Jahreseinkommen: " + euro.format(result.income) + " · " +
+      "Beitragsrelevantes Jahreseinkommen: " + euro.format(result.income) + " · " +
       compactSections.length + (compactSections.length === 1 ? " Beitragsabschnitt" : " Beitragsabschnitte") +
       " von " + formatMonth(result.startMonth) + " bis " + formatMonth(result.endMonth);
 
@@ -269,7 +300,7 @@
         '<td class="number amount total-cell"><strong>' + euro.format(section.newTotal) + "</strong></td>" +
         '<td class="number amount delta total-cell ' + differenceClass(differenceTotalValue) + '"><strong>' + euro.format(differenceTotalValue) + "</strong></td>" +
         "</tr>" +
-        '<tr class="details-row"><td colspan="8"><div class="details-label">Kinder und Alter</div><div class="children-detail-grid">' + childCell(section) + "</div></td></tr>";
+        '<tr class="details-row"><td colspan="8"><div class="details-label">Kinder und Alter</div><div class="children-detail-grid">' + childCell(section) + "</div>" + careDifferenceDetails(section) + "</td></tr>";
     }).join("");
 
     compactResultBody.innerHTML = compactSections.map((section) => {
@@ -308,7 +339,7 @@
   });
 
   window.addEventListener("error", function () {
-    errorBox.textContent = "Die Anwendung konnte nicht vollständig geladen werden. Bitte die Datei Kita-Beitragsrechner.html direkt in Safari, Chrome, Edge oder Firefox öffnen.";
+    errorBox.textContent = "Die Anwendung konnte nicht vollständig geladen werden. Bitte die Datei Kitabeitragsrechner_3.0.html direkt in Safari, Chrome, Edge oder Firefox öffnen.";
     errorBox.hidden = false;
   });
 
@@ -340,6 +371,20 @@
     },
   };
 
+  referenceExamples[4] = {
+    income: "180.000", startYear: "2026",
+    children: [["2022-04-25", "2023", "35"], ["2024-01-03", "2025", "35"], ["2026-07-16", "2027", "35"]],
+  };
+  referenceExamples[5] = {
+    income: "70.000", startYear: "2026",
+    children: [["2024-06-25", "2025", "45"], ["2025-04-03", "2026", "45"]],
+  };
+
+  referenceExamples[6] = {
+    income: "90.000", startYear: "2026",
+    children: [["2020-06-15", "2021", "45"], ["2024-06-15", "2025", "45"], ["2025-06-15", "2026", "45"]],
+  };
+
   function applyReferenceExample(exampleNumber) {
     const example = referenceExamples[exampleNumber];
     incomeInput.value = example.income;
@@ -348,12 +393,13 @@
       const child = example.children[index - 1] || ["", ""];
       form.elements["birth-" + index].value = child[0];
       form.elements["entry-" + index].value = child[1];
+      form.elements["hours-" + index].value = child[2] || "45";
     }
     document.getElementById("example-menu").open = false;
     form.requestSubmit();
   }
 
-  for (let exampleNumber = 1; exampleNumber <= 3; exampleNumber += 1) {
+  for (let exampleNumber = 1; exampleNumber <= 6; exampleNumber += 1) {
     document.getElementById("example-" + exampleNumber).addEventListener("click", function () {
       applyReferenceExample(exampleNumber);
     });
@@ -363,6 +409,7 @@
     document.getElementById("clear-child-" + index).addEventListener("click", function () {
       form.elements["birth-" + index].value = "";
       form.elements["entry-" + index].value = "";
+      form.elements["hours-" + index].value = "45";
       if (typeof form.elements["birth-" + index].focus === "function") {
         form.elements["birth-" + index].focus();
       }

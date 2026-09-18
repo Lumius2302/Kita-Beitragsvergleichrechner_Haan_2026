@@ -1,36 +1,21 @@
 (function (root, factory) {
-  const api = factory();
+  const tariffs = typeof module === "object" && module.exports ? require("./tariff-data.js") : root.KitaTariffs;
+  const api = factory(tariffs);
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.KitaCalculator = api;
-})(typeof window !== "undefined" ? window : globalThis, function () {
+})(typeof window !== "undefined" ? window : globalThis, function (tariffs) {
   "use strict";
 
-  const OLD_BRACKETS = [
-    { min: 0, maxExclusive: 33000, young: 0, older: 0 },
-    { min: 33000, maxExclusive: 37000, young: 106, older: 61 },
-    { min: 37000, maxExclusive: 50000, young: 178, older: 102 },
-    { min: 50000, maxExclusive: 62000, young: 266, older: 152 },
-    { min: 62000, maxExclusive: 75000, young: 370, older: 212 },
-    { min: 75000, maxExclusive: 87000, young: 491, older: 281 },
-    { min: 87000, maxExclusive: 100000, young: 629, older: 359 },
-    { min: 100000, maxExclusive: Infinity, young: 725, older: 415 },
-  ];
-
-  const NEW_BRACKETS = [
-    { maxInclusive: 36000, young: 0, older: 0 },
-    { maxInclusive: 43000, young: 122, older: 82 },
-    { maxInclusive: 50000, young: 153, older: 102 },
-    { maxInclusive: 56000, young: 190, older: 127 },
-    { maxInclusive: 62000, young: 228, older: 152 },
-    { maxInclusive: 75000, young: 317, older: 212 },
-    { maxInclusive: 87000, young: 421, older: 281 },
-    { maxInclusive: 100000, young: 550, older: 366 },
-    { maxInclusive: 112000, young: 634, older: 423 },
-    { maxInclusive: 125000, young: 659, older: 440 },
-    { maxInclusive: 150000, young: 686, older: 458 },
-    { maxInclusive: 175000, young: 713, older: 476 },
-    { maxInclusive: Infinity, young: 742, older: 495 },
-  ];
+  if (!tariffs) throw new Error("Die Beitragstabellen konnten nicht geladen werden.");
+  const hourColumn = tariffs.hours.indexOf(tariffs.defaultHours);
+  const OLD_BRACKETS = tariffs.old.brackets.map((row) => ({
+    min: row.min, maxExclusive: row.max === null ? Infinity : row.max,
+    young: row.young[hourColumn], older: row.older[hourColumn],
+  }));
+  const NEW_BRACKETS = tariffs.new.brackets.map((row) => ({
+    maxInclusive: row.max === null ? Infinity : row.max,
+    young: row.young[hourColumn], older: row.older[hourColumn],
+  }));
 
   function parseDate(value) {
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || "");
@@ -66,32 +51,50 @@
     return freeStartMonth(birth) + 23;
   }
 
-  function oldRate(income, category) {
-    const bracket = OLD_BRACKETS.find((item) => income >= item.min && income < item.maxExclusive);
-    return category === "U2" ? bracket.young : bracket.older;
+  function hoursIndex(hours) {
+    if (hours === "" || hours === null || !tariffs.hours.includes(Number(hours))) {
+      throw new Error("Bitte eine gültige Betreuungszeit auswählen.");
+    }
+    return tariffs.hours.indexOf(Number(hours));
   }
 
-  function newRate(income, category) {
-    const bracket = NEW_BRACKETS.find((item) => income <= item.maxInclusive);
-    return category === "U3" ? bracket.young : bracket.older;
+  function oldRate(income, category, hours = tariffs.defaultHours) {
+    const column = hoursIndex(hours);
+    const bracket = tariffs.old.brackets.find((item) => income >= item.min && (item.max === null || income < item.max));
+    if (!bracket) throw new Error("Für das beitragsrelevante Jahreseinkommen wurde kein Tarif gefunden.");
+    return (category === "U2" ? bracket.young : bracket.older)[column];
+  }
+
+  function newRate(income, category, hours = tariffs.defaultHours) {
+    const column = hoursIndex(hours);
+    const bracket = tariffs.new.brackets.find((item) => item.max === null || income <= item.max);
+    if (!bracket || !Number.isFinite(income) || income < 0) throw new Error("Für das beitragsrelevante Jahreseinkommen wurde kein Tarif gefunden.");
+    return (category === "U3" ? bracket.young : bracket.older)[column];
   }
 
   function childBaseState(child, month, income, statute) {
     const entered = month >= child.entryMonth;
-    const left = month > child.exitMonth;
+    const left = month > child.careEndMonth;
     const active = entered && !left;
-    const free = active && month >= child.freeStartMonth;
+    const ogs = active && month > child.exitMonth;
+    const free = active && !ogs && month >= child.freeStartMonth;
     const ageMonths = ageInMonths(child.birth, month);
     let category = null;
     let base = 0;
 
-    if (active && !free) {
+    if (ogs) {
+      category = "OGS";
+      const bracket = statute === "old"
+        ? tariffs.old.brackets.find((row) => income >= row.min && (row.max === null || income < row.max))
+        : tariffs.new.brackets.find((row) => row.max === null || income <= row.max);
+      base = bracket.ogsFirst;
+    } else if (active && !free) {
       if (statute === "old") {
         category = ageMonths <= 24 ? "U2" : "Ü2";
-        base = oldRate(income, category);
+        base = oldRate(income, category, child.hours);
       } else {
         category = ageMonths <= 36 ? "U3" : "Ü3";
-        base = newRate(income, category);
+        base = newRate(income, category, child.hours);
       }
     }
 
@@ -100,14 +103,16 @@
       name: child.name,
       birth: child.birth,
       ageMonths,
+      hours: child.hours,
       active,
+      ogs,
       entered,
       left,
       free,
       category,
       base,
       charged: 0,
-      role: active ? (free ? "Beitragsfreie Jahre" : "") : (left ? "Kita beendet" : "Noch nicht gestartet"),
+      role: active ? (free ? "Beitragsfreie Kita-Jahre" : "") : (left ? "Betreuung beendet" : "Noch nicht gestartet"),
     };
   }
 
@@ -153,8 +158,29 @@
   }
 
   function evaluateMonth(month, children, income) {
-    const oldChildren = applyOldSiblingRule(children.map((child) => childBaseState(child, month, income, "old")));
-    const newChildren = applyNewSiblingRule(children.map((child) => childBaseState(child, month, income, "new")));
+    const evaluate = (statute) => {
+      const states = children.map((child) => childBaseState(child, month, income, statute));
+      const kita = states.filter((state) => !state.ogs);
+      (statute === "old" ? applyOldSiblingRule : applyNewSiblingRule)(kita);
+      const ogs = orderPayingChildren(states.filter((state) => state.ogs));
+      const mixed = kita.some((state) => state.active);
+      ogs.forEach((state, index) => {
+        const fraction = mixed ? (index === 0 ? 0.5 : 0) : (index === 0 ? 1 : index === 1 ? 0.5 : 0);
+        state.charged = state.base * fraction;
+        state.role = mixed ? (index === 0 ? "Kita + OGS · 50 %" : "Weitere OGS · 0 %")
+          : (index === 0 ? "OGS · 100 %" : index === 1 ? "OGS-Zweitkind · 50 %" : "Weitere OGS · 0 %");
+      });
+      if (statute === "new") {
+        const charged = states.filter((state) => state.charged > 0).sort((a, b) => b.charged - a.charged || a.id - b.id);
+        charged.slice(2).forEach((state) => {
+          state.charged = 0;
+          state.role += " · Gesamtbegrenzung: 0 %";
+        });
+      }
+      return states;
+    };
+    const oldChildren = evaluate("old");
+    const newChildren = evaluate("new");
     const oldTotal = oldChildren.reduce((sum, child) => sum + child.charged, 0);
     const newTotal = newChildren.reduce((sum, child) => sum + child.charged, 0);
     return { month, oldTotal, newTotal, difference: newTotal - oldTotal, oldChildren, newChildren };
@@ -162,7 +188,9 @@
 
   function stateKey(monthResult) {
     const childKey = (children) => children.map((child) => [
+      child.hours,
       child.active,
+      child.ogs,
       child.free,
       child.category || "-",
       child.base,
@@ -181,11 +209,14 @@
     return children.map((child, index) => {
       const birth = typeof child.birth === "string" ? parseDate(child.birth) : child.birth;
       const entry = typeof child.entry === "string" ? parseDate(child.entry) : child.entry;
+      const hours = child.hours === undefined ? tariffs.defaultHours : child.hours;
+      hoursIndex(hours);
       const normalized = {
         id: child.id || index + 1,
         name: child.name || "Kind " + (index + 1),
         birth,
         entry,
+        hours: Number(hours),
         entryMonth: monthIndex(entry.year, entry.month),
         freeStartMonth: freeStartMonth(birth),
         exitMonth: exitMonth(birth),
@@ -201,16 +232,17 @@
   }
 
   function calculate(input) {
-    const income = Number(input.income);
+    const income = input.income == null || String(input.income).trim() === "" ? NaN : Number(input.income);
     const startYear = Number(input.startYear);
-    if (!Number.isFinite(income) || income < 0) throw new Error("Bitte ein gültiges, nicht negatives Einkommen eingeben.");
+    if (!Number.isFinite(income) || income < 0) throw new Error("Bitte ein gültiges, nicht negatives beitragsrelevantes Jahreseinkommen eingeben.");
     if (!Number.isInteger(startYear) || startYear < 2000 || startYear > 2200) throw new Error("Bitte ein gültiges Startjahr eingeben.");
     if (!Array.isArray(input.children) || input.children.length === 0) throw new Error("Bitte mindestens ein Kind vollständig eintragen.");
 
     const children = normalizeChildren(input.children);
+    children.forEach((child) => { child.careEndMonth = child.exitMonth + (input.includeOgs === false ? 0 : 48); });
     const startMonth = monthIndex(startYear, 8);
-    const endMonth = Math.max(...children.map((child) => child.exitMonth));
-    if (startMonth > endMonth) throw new Error("Im gewählten Startjahr ist keines der Kinder mehr in der Kita.");
+    const endMonth = Math.max(...children.map((child) => child.careEndMonth));
+    if (startMonth > endMonth) throw new Error("Im gewählten Startjahr ist keines der Kinder mehr in Kita oder OGS.");
 
     const months = [];
     for (let month = startMonth; month <= endMonth; month += 1) {
@@ -247,6 +279,15 @@
 
     const oldTotal = sections.reduce((sum, section) => sum + section.oldTotal, 0);
     const newTotal = sections.reduce((sum, section) => sum + section.newTotal, 0);
+    const careTotals = {};
+    for (const [type, ogs] of [["kita", false], ["ogs", true]]) {
+      const sum = (key) => sections.reduce((total, section) => total + section[key]
+        .filter((child) => child.ogs === ogs)
+        .reduce((subtotal, child) => subtotal + child.charged, 0) * section.monthCount, 0);
+      const old = sum("oldChildren");
+      const current = sum("newChildren");
+      careTotals[type] = { oldTotal: old, newTotal: current, difference: current - old };
+    }
     return {
       income,
       startYear,
@@ -257,6 +298,7 @@
       oldTotal,
       newTotal,
       difference: newTotal - oldTotal,
+      careTotals,
     };
   }
 

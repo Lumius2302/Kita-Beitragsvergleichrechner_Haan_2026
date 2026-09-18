@@ -7,7 +7,7 @@
       name="description"
       content="Lokaler Rechner zum Vergleich der Kita-Beiträge nach alter und neuer Satzung."
     />
-    <title>Kita-Beitragsvergleich</title>
+    <title>Kitabeitragsrechner_3.0</title>
     <style>
 :root {
   --ink: #14233c;
@@ -34,7 +34,7 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; background: var(--canvas); font-size: 16px; line-height: 1.5; }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { cursor: pointer; }
 
 .topbar {
@@ -65,13 +65,14 @@ main { width: min(1480px, calc(100% - 32px)); margin: 34px auto 50px; }
 .section-heading h2 { margin: 2px 0 0; font-size: clamp(1.65rem, 3vw, 2.3rem); line-height: 1.1; letter-spacing: -.035em; }
 .step-label { margin: 0; color: var(--blue); font-size: .75rem; letter-spacing: .15em; font-weight: 800; text-transform: uppercase; }
 .section-note { max-width: 390px; margin: 0; color: var(--muted); text-align: right; font-size: .9rem; }
+.section-note.result-note { max-width: none; width: 100%; text-align: left; line-height: 1.6; margin: 0 0 16px; }
 
-.primary-inputs { display: grid; grid-template-columns: minmax(260px, 2fr) minmax(180px, 1fr); gap: 18px; max-width: 720px; padding: 20px; border-radius: 14px; background: #eef4fb; }
+.primary-inputs { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr) minmax(130px, 0.5fr); gap: 18px; max-width: 1100px; padding: 20px; border-radius: 14px; background: #eef4fb; }
 .field { display: grid; gap: 8px; min-width: 0; }
 .field > span:first-child { color: #36445a; font-size: .86rem; font-weight: 700; }
-input { width: 100%; height: 48px; padding: 0 13px; color: var(--ink); background: white; border: 1px solid #cbd5e2; border-radius: 9px; outline: none; transition: border-color .16s, box-shadow .16s; }
-input:hover { border-color: #99a9bd; }
-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(45,108,223,.14); }
+input, select { width: 100%; height: 48px; padding: 0 13px; color: var(--ink); background: white; border: 1px solid #cbd5e2; border-radius: 9px; outline: none; transition: border-color .16s, box-shadow .16s; }
+input:hover, select:hover { border-color: #99a9bd; }
+input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(45,108,223,.14); }
 .input-shell { position: relative; display: block; }
 .input-shell input { padding-right: 42px; }
 .suffix { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 700; }
@@ -83,7 +84,7 @@ input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(45,108,223,.
 .child-card { position: relative; min-width: 0; margin: 0; padding: 22px 18px 18px; display: grid; gap: 16px; border: 1px solid var(--line); border-radius: 13px; background: #fbfcfe; }
 .child-card legend { padding: 0 6px; color: var(--ink); font-weight: 800; }
 .child-card legend span { margin-right: 7px; color: var(--cyan); font-size: .72rem; letter-spacing: .08em; }
-.child-card input { height: 44px; }
+.child-card input, .child-card select { height: 44px; }
 .clear-child-button { position: absolute; top: 9px; right: 10px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; color: #758196; background: transparent; border: 0; border-radius: 6px; font-size: .75rem; font-weight: 700; }
 .clear-child-button:hover { color: #9b342f; background: #fff0ee; }
 .clear-child-button:focus-visible { outline: 3px solid rgba(45,108,223,.2); outline-offset: 1px; }
@@ -145,6 +146,13 @@ tbody tr:hover { background: #fafcff; }
 .details-row td { padding: 13px 16px 17px; background: #f7f9fc; border-bottom: 2px solid #d8e0ea; }
 .details-label { margin-bottom: 7px; color: #617087; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .children-detail-grid { display: grid; gap: 0; }
+.care-difference-details { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-size: .8rem; line-height: 1.5; }
+.care-difference-label { color: var(--muted); }
+.care-difference-item { display: inline; }
+.care-difference-item span { font-variant-numeric: tabular-nums; }
+.care-difference-item small { color: var(--muted); }
+.care-difference-item .saves { color: #187348; }
+.care-difference-item .costs { color: #b63a32; }
 .child-status { display: grid; grid-template-columns: 90px minmax(170px, 220px) minmax(520px, 1fr); align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px dashed #dbe3ed; }
 .child-status:first-child { padding-top: 0; }
 .child-status:last-child { padding-bottom: 0; border-bottom: 0; }
@@ -157,6 +165,11 @@ tbody tr:hover { background: #fafcff; }
 .total-cell { background: rgba(237,242,247,.45); }
 
 .compact-table-section { margin-top: 30px; }
+.result-table { min-width: 650px; }
+.result-table td { text-align: right; white-space: nowrap; }
+.result-table thead th:not(:first-child) { text-align: right; }
+.result-table tbody th { text-transform: none; font-size: .88rem; }
+.result-table tbody tr:last-child { font-weight: 700; background: #edf2f7; }
 .compact-table-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 12px; }
 .compact-table-heading h3 { margin: 3px 0 0; font-size: 1.25rem; }
 .compact-table-actions { min-height: 48px; display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
@@ -183,8 +196,9 @@ tbody tr:hover { background: #fafcff; }
 .rules-content section:first-child { border-top: 0; }
 .rules-content h4 { margin: 0 0 8px; color: var(--ink); font-size: 1rem; }
 .rules-content ul { margin: 0; padding-left: 21px; }
-.rate-tables { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.4fr); gap: 16px; align-items: start; }
-.rate-table { min-width: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: .78rem; }
+.rate-tables { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+.rate-table-scroll { min-width: 0; max-width: 100%; overflow-x: auto; }
+.rate-table { width: 100%; min-width: 950px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: .78rem; }
 .rate-table caption { padding: 9px 10px; color: white; background: var(--navy); font-size: .85rem; font-weight: 800; text-align: left; }
 .rate-table th { padding: 8px 9px; font-size: .68rem; }
 .rate-table td { padding: 7px 9px; vertical-align: middle; }
@@ -192,6 +206,7 @@ tbody tr:hover { background: #fafcff; }
 footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718096; font-size: .78rem; text-align: center; }
 
 @media (max-width: 1050px) {
+  .primary-inputs { grid-template-columns: 1fr; }
   .children-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .scroll-hint { display: block; }
@@ -242,36 +257,627 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
 (function (root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
-  if (root) root.KitaCalculator = api;
+  if (root) root.KitaTariffs = api;
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
+  // Unveränderte Zahlen aus der vom Nutzer gelieferten Excel-Datei.
+  // Neue Satzung: Centbeträge oberhalb einer Obergrenze wechseln wie bisher in die nächste Stufe.
+  return {
+  "source": "sources/Elternbeitraege_Neue_und_Alte_Satzung.xlsx",
+  "hours": [
+    15,
+    20,
+    25,
+    30,
+    35,
+    40,
+    45,
+    50
+  ],
+  "defaultHours": 45,
+  "old": {
+    "sheet": "Kitabeiträge Alte Satzung",
+    "upperBound": "exclusive",
+    "brackets": [
+      {
+        "sourceRow": 8,
+        "min": 0,
+        "max": 33000,
+        "young": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "older": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "ogsFirst": 0,
+        "ogsSecond": 0
+      },
+      {
+        "sourceRow": 9,
+        "min": 33000,
+        "max": 37000,
+        "young": [
+          28,
+          41,
+          54,
+          64,
+          77,
+          93,
+          106,
+          120
+        ],
+        "older": [
+          16,
+          23,
+          31,
+          36,
+          44,
+          53,
+          61,
+          68
+        ],
+        "ogsFirst": 55,
+        "ogsSecond": 27.5
+      },
+      {
+        "sourceRow": 10,
+        "min": 37000,
+        "max": 50000,
+        "young": [
+          49,
+          70,
+          92,
+          107,
+          129,
+          156,
+          178,
+          200
+        ],
+        "older": [
+          28,
+          40,
+          52,
+          61,
+          73,
+          89,
+          102,
+          114
+        ],
+        "ogsFirst": 85,
+        "ogsSecond": 42.5
+      },
+      {
+        "sourceRow": 11,
+        "min": 50000,
+        "max": 62000,
+        "young": [
+          75,
+          107,
+          139,
+          161,
+          193,
+          234,
+          266,
+          298
+        ],
+        "older": [
+          43,
+          61,
+          79,
+          92,
+          110,
+          134,
+          152,
+          170
+        ],
+        "ogsFirst": 110,
+        "ogsSecond": 55
+      },
+      {
+        "sourceRow": 12,
+        "min": 62000,
+        "max": 75000,
+        "young": [
+          107,
+          151,
+          195,
+          225,
+          269,
+          327,
+          370,
+          414
+        ],
+        "older": [
+          61,
+          86,
+          111,
+          128,
+          153,
+          187,
+          212,
+          237
+        ],
+        "ogsFirst": 140,
+        "ogsSecond": 70
+      },
+      {
+        "sourceRow": 13,
+        "min": 75000,
+        "max": 87000,
+        "young": [
+          145,
+          203,
+          260,
+          299,
+          357,
+          434,
+          491,
+          549
+        ],
+        "older": [
+          83,
+          116,
+          149,
+          171,
+          204,
+          248,
+          281,
+          314
+        ],
+        "ogsFirst": 175,
+        "ogsSecond": 87.5
+      },
+      {
+        "sourceRow": 14,
+        "min": 87000,
+        "max": 100000,
+        "young": [
+          188,
+          262,
+          335,
+          383,
+          457,
+          555,
+          629,
+          702
+        ],
+        "older": [
+          108,
+          150,
+          191,
+          219,
+          261,
+          317,
+          359,
+          401
+        ],
+        "ogsFirst": 180,
+        "ogsSecond": 90
+      },
+      {
+        "sourceRow": 15,
+        "min": 100000,
+        "max": null,
+        "young": [
+          217,
+          302,
+          386,
+          442,
+          526,
+          640,
+          725,
+          809
+        ],
+        "older": [
+          124,
+          173,
+          222,
+          253,
+          302,
+          366,
+          415,
+          462
+        ],
+        "ogsFirst": 180,
+        "ogsSecond": 90
+      }
+    ]
+  },
+  "new": {
+    "sheet": "Kitabeiträge Neue Satzung",
+    "upperBound": "inclusive",
+    "brackets": [
+      {
+        "sourceRow": 8,
+        "min": 0,
+        "max": 36000,
+        "young": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "older": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "ogsFirst": 0,
+        "ogsSecond": 0
+      },
+      {
+        "sourceRow": 9,
+        "min": 36001,
+        "max": 43000,
+        "young": [
+          33,
+          48,
+          63,
+          73,
+          88,
+          107,
+          122,
+          137
+        ],
+        "older": [
+          22,
+          32,
+          42,
+          49,
+          59,
+          71,
+          82,
+          91
+        ],
+        "ogsFirst": 50,
+        "ogsSecond": 25
+      },
+      {
+        "sourceRow": 10,
+        "min": 43001,
+        "max": 50000,
+        "young": [
+          42,
+          60,
+          79,
+          92,
+          110,
+          134,
+          153,
+          171
+        ],
+        "older": [
+          28,
+          40,
+          52,
+          61,
+          73,
+          89,
+          102,
+          114
+        ],
+        "ogsFirst": 80,
+        "ogsSecond": 40
+      },
+      {
+        "sourceRow": 11,
+        "min": 50001,
+        "max": 56000,
+        "young": [
+          53,
+          76,
+          99,
+          115,
+          138,
+          167,
+          190,
+          213
+        ],
+        "older": [
+          36,
+          51,
+          66,
+          77,
+          92,
+          112,
+          127,
+          142
+        ],
+        "ogsFirst": 100,
+        "ogsSecond": 50
+      },
+      {
+        "sourceRow": 12,
+        "min": 56001,
+        "max": 62000,
+        "young": [
+          64,
+          92,
+          119,
+          138,
+          165,
+          201,
+          228,
+          255
+        ],
+        "older": [
+          43,
+          61,
+          79,
+          92,
+          110,
+          134,
+          152,
+          170
+        ],
+        "ogsFirst": 110,
+        "ogsSecond": 55
+      },
+      {
+        "sourceRow": 13,
+        "min": 62001,
+        "max": 75000,
+        "young": [
+          92,
+          129,
+          167,
+          193,
+          230,
+          280,
+          317,
+          355
+        ],
+        "older": [
+          61,
+          86,
+          111,
+          128,
+          153,
+          187,
+          212,
+          237
+        ],
+        "ogsFirst": 140,
+        "ogsSecond": 70
+      },
+      {
+        "sourceRow": 14,
+        "min": 75001,
+        "max": 87000,
+        "young": [
+          124,
+          174,
+          223,
+          256,
+          306,
+          372,
+          421,
+          471
+        ],
+        "older": [
+          83,
+          116,
+          149,
+          171,
+          204,
+          248,
+          281,
+          314
+        ],
+        "ogsFirst": 170,
+        "ogsSecond": 85
+      },
+      {
+        "sourceRow": 15,
+        "min": 87001,
+        "max": 100000,
+        "young": [
+          165,
+          229,
+          293,
+          335,
+          400,
+          485,
+          550,
+          614
+        ],
+        "older": [
+          110,
+          153,
+          195,
+          223,
+          266,
+          323,
+          366,
+          409
+        ],
+        "ogsFirst": 180,
+        "ogsSecond": 90
+      },
+      {
+        "sourceRow": 16,
+        "min": 100001,
+        "max": 112000,
+        "young": [
+          190,
+          264,
+          338,
+          387,
+          460,
+          560,
+          634,
+          707
+        ],
+        "older": [
+          126,
+          176,
+          226,
+          258,
+          308,
+          373,
+          423,
+          471
+        ],
+        "ogsFirst": 200,
+        "ogsSecond": 100
+      },
+      {
+        "sourceRow": 17,
+        "min": 112001,
+        "max": 125000,
+        "young": [
+          197,
+          275,
+          351,
+          402,
+          479,
+          582,
+          659,
+          735
+        ],
+        "older": [
+          132,
+          184,
+          235,
+          268,
+          320,
+          388,
+          440,
+          490
+        ],
+        "ogsFirst": 200,
+        "ogsSecond": 100
+      },
+      {
+        "sourceRow": 18,
+        "min": 125001,
+        "max": 150000,
+        "young": [
+          205,
+          286,
+          366,
+          418,
+          498,
+          605,
+          686,
+          765
+        ],
+        "older": [
+          137,
+          191,
+          245,
+          279,
+          333,
+          404,
+          458,
+          510
+        ],
+        "ogsFirst": 220,
+        "ogsSecond": 110
+      },
+      {
+        "sourceRow": 19,
+        "min": 150001,
+        "max": 175000,
+        "young": [
+          213,
+          297,
+          380,
+          435,
+          518,
+          630,
+          713,
+          796
+        ],
+        "older": [
+          142,
+          198,
+          255,
+          290,
+          347,
+          420,
+          476,
+          530
+        ],
+        "ogsFirst": 220,
+        "ogsSecond": 110
+      },
+      {
+        "sourceRow": 20,
+        "min": 175001,
+        "max": null,
+        "young": [
+          222,
+          309,
+          395,
+          452,
+          539,
+          655,
+          742,
+          827
+        ],
+        "older": [
+          148,
+          206,
+          265,
+          302,
+          360,
+          437,
+          495,
+          551
+        ],
+        "ogsFirst": 230,
+        "ogsSecond": 115
+      }
+    ]
+  }
+};
+});
 
-  const OLD_BRACKETS = [
-    { min: 0, maxExclusive: 33000, young: 0, older: 0 },
-    { min: 33000, maxExclusive: 37000, young: 106, older: 61 },
-    { min: 37000, maxExclusive: 50000, young: 178, older: 102 },
-    { min: 50000, maxExclusive: 62000, young: 266, older: 152 },
-    { min: 62000, maxExclusive: 75000, young: 370, older: 212 },
-    { min: 75000, maxExclusive: 87000, young: 491, older: 281 },
-    { min: 87000, maxExclusive: 100000, young: 629, older: 359 },
-    { min: 100000, maxExclusive: Infinity, young: 725, older: 415 },
-  ];
 
-  const NEW_BRACKETS = [
-    { maxInclusive: 36000, young: 0, older: 0 },
-    { maxInclusive: 43000, young: 122, older: 82 },
-    { maxInclusive: 50000, young: 153, older: 102 },
-    { maxInclusive: 56000, young: 190, older: 127 },
-    { maxInclusive: 62000, young: 228, older: 152 },
-    { maxInclusive: 75000, young: 317, older: 212 },
-    { maxInclusive: 87000, young: 421, older: 281 },
-    { maxInclusive: 100000, young: 550, older: 366 },
-    { maxInclusive: 112000, young: 634, older: 423 },
-    { maxInclusive: 125000, young: 659, older: 440 },
-    { maxInclusive: 150000, young: 686, older: 458 },
-    { maxInclusive: 175000, young: 713, older: 476 },
-    { maxInclusive: Infinity, young: 742, older: 495 },
-  ];
+</script>
+    <script>
+(function (root, factory) {
+  const tariffs = typeof module === "object" && module.exports ? require("./tariff-data.js") : root.KitaTariffs;
+  const api = factory(tariffs);
+  if (typeof module === "object" && module.exports) module.exports = api;
+  if (root) root.KitaCalculator = api;
+})(typeof window !== "undefined" ? window : globalThis, function (tariffs) {
+  "use strict";
+
+  if (!tariffs) throw new Error("Die Beitragstabellen konnten nicht geladen werden.");
+  const hourColumn = tariffs.hours.indexOf(tariffs.defaultHours);
+  const OLD_BRACKETS = tariffs.old.brackets.map((row) => ({
+    min: row.min, maxExclusive: row.max === null ? Infinity : row.max,
+    young: row.young[hourColumn], older: row.older[hourColumn],
+  }));
+  const NEW_BRACKETS = tariffs.new.brackets.map((row) => ({
+    maxInclusive: row.max === null ? Infinity : row.max,
+    young: row.young[hourColumn], older: row.older[hourColumn],
+  }));
 
   function parseDate(value) {
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || "");
@@ -307,32 +913,50 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
     return freeStartMonth(birth) + 23;
   }
 
-  function oldRate(income, category) {
-    const bracket = OLD_BRACKETS.find((item) => income >= item.min && income < item.maxExclusive);
-    return category === "U2" ? bracket.young : bracket.older;
+  function hoursIndex(hours) {
+    if (hours === "" || hours === null || !tariffs.hours.includes(Number(hours))) {
+      throw new Error("Bitte eine gültige Betreuungszeit auswählen.");
+    }
+    return tariffs.hours.indexOf(Number(hours));
   }
 
-  function newRate(income, category) {
-    const bracket = NEW_BRACKETS.find((item) => income <= item.maxInclusive);
-    return category === "U3" ? bracket.young : bracket.older;
+  function oldRate(income, category, hours = tariffs.defaultHours) {
+    const column = hoursIndex(hours);
+    const bracket = tariffs.old.brackets.find((item) => income >= item.min && (item.max === null || income < item.max));
+    if (!bracket) throw new Error("Für das beitragsrelevante Jahreseinkommen wurde kein Tarif gefunden.");
+    return (category === "U2" ? bracket.young : bracket.older)[column];
+  }
+
+  function newRate(income, category, hours = tariffs.defaultHours) {
+    const column = hoursIndex(hours);
+    const bracket = tariffs.new.brackets.find((item) => item.max === null || income <= item.max);
+    if (!bracket || !Number.isFinite(income) || income < 0) throw new Error("Für das beitragsrelevante Jahreseinkommen wurde kein Tarif gefunden.");
+    return (category === "U3" ? bracket.young : bracket.older)[column];
   }
 
   function childBaseState(child, month, income, statute) {
     const entered = month >= child.entryMonth;
-    const left = month > child.exitMonth;
+    const left = month > child.careEndMonth;
     const active = entered && !left;
-    const free = active && month >= child.freeStartMonth;
+    const ogs = active && month > child.exitMonth;
+    const free = active && !ogs && month >= child.freeStartMonth;
     const ageMonths = ageInMonths(child.birth, month);
     let category = null;
     let base = 0;
 
-    if (active && !free) {
+    if (ogs) {
+      category = "OGS";
+      const bracket = statute === "old"
+        ? tariffs.old.brackets.find((row) => income >= row.min && (row.max === null || income < row.max))
+        : tariffs.new.brackets.find((row) => row.max === null || income <= row.max);
+      base = bracket.ogsFirst;
+    } else if (active && !free) {
       if (statute === "old") {
         category = ageMonths <= 24 ? "U2" : "Ü2";
-        base = oldRate(income, category);
+        base = oldRate(income, category, child.hours);
       } else {
         category = ageMonths <= 36 ? "U3" : "Ü3";
-        base = newRate(income, category);
+        base = newRate(income, category, child.hours);
       }
     }
 
@@ -341,14 +965,16 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
       name: child.name,
       birth: child.birth,
       ageMonths,
+      hours: child.hours,
       active,
+      ogs,
       entered,
       left,
       free,
       category,
       base,
       charged: 0,
-      role: active ? (free ? "Beitragsfreie Jahre" : "") : (left ? "Kita beendet" : "Noch nicht gestartet"),
+      role: active ? (free ? "Beitragsfreie Kita-Jahre" : "") : (left ? "Betreuung beendet" : "Noch nicht gestartet"),
     };
   }
 
@@ -394,8 +1020,29 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
   }
 
   function evaluateMonth(month, children, income) {
-    const oldChildren = applyOldSiblingRule(children.map((child) => childBaseState(child, month, income, "old")));
-    const newChildren = applyNewSiblingRule(children.map((child) => childBaseState(child, month, income, "new")));
+    const evaluate = (statute) => {
+      const states = children.map((child) => childBaseState(child, month, income, statute));
+      const kita = states.filter((state) => !state.ogs);
+      (statute === "old" ? applyOldSiblingRule : applyNewSiblingRule)(kita);
+      const ogs = orderPayingChildren(states.filter((state) => state.ogs));
+      const mixed = kita.some((state) => state.active);
+      ogs.forEach((state, index) => {
+        const fraction = mixed ? (index === 0 ? 0.5 : 0) : (index === 0 ? 1 : index === 1 ? 0.5 : 0);
+        state.charged = state.base * fraction;
+        state.role = mixed ? (index === 0 ? "Kita + OGS · 50 %" : "Weitere OGS · 0 %")
+          : (index === 0 ? "OGS · 100 %" : index === 1 ? "OGS-Zweitkind · 50 %" : "Weitere OGS · 0 %");
+      });
+      if (statute === "new") {
+        const charged = states.filter((state) => state.charged > 0).sort((a, b) => b.charged - a.charged || a.id - b.id);
+        charged.slice(2).forEach((state) => {
+          state.charged = 0;
+          state.role += " · Gesamtbegrenzung: 0 %";
+        });
+      }
+      return states;
+    };
+    const oldChildren = evaluate("old");
+    const newChildren = evaluate("new");
     const oldTotal = oldChildren.reduce((sum, child) => sum + child.charged, 0);
     const newTotal = newChildren.reduce((sum, child) => sum + child.charged, 0);
     return { month, oldTotal, newTotal, difference: newTotal - oldTotal, oldChildren, newChildren };
@@ -403,7 +1050,9 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
 
   function stateKey(monthResult) {
     const childKey = (children) => children.map((child) => [
+      child.hours,
       child.active,
+      child.ogs,
       child.free,
       child.category || "-",
       child.base,
@@ -422,11 +1071,14 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
     return children.map((child, index) => {
       const birth = typeof child.birth === "string" ? parseDate(child.birth) : child.birth;
       const entry = typeof child.entry === "string" ? parseDate(child.entry) : child.entry;
+      const hours = child.hours === undefined ? tariffs.defaultHours : child.hours;
+      hoursIndex(hours);
       const normalized = {
         id: child.id || index + 1,
         name: child.name || "Kind " + (index + 1),
         birth,
         entry,
+        hours: Number(hours),
         entryMonth: monthIndex(entry.year, entry.month),
         freeStartMonth: freeStartMonth(birth),
         exitMonth: exitMonth(birth),
@@ -442,16 +1094,17 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
   }
 
   function calculate(input) {
-    const income = Number(input.income);
+    const income = input.income == null || String(input.income).trim() === "" ? NaN : Number(input.income);
     const startYear = Number(input.startYear);
-    if (!Number.isFinite(income) || income < 0) throw new Error("Bitte ein gültiges, nicht negatives Einkommen eingeben.");
+    if (!Number.isFinite(income) || income < 0) throw new Error("Bitte ein gültiges, nicht negatives beitragsrelevantes Jahreseinkommen eingeben.");
     if (!Number.isInteger(startYear) || startYear < 2000 || startYear > 2200) throw new Error("Bitte ein gültiges Startjahr eingeben.");
     if (!Array.isArray(input.children) || input.children.length === 0) throw new Error("Bitte mindestens ein Kind vollständig eintragen.");
 
     const children = normalizeChildren(input.children);
+    children.forEach((child) => { child.careEndMonth = child.exitMonth + (input.includeOgs === false ? 0 : 48); });
     const startMonth = monthIndex(startYear, 8);
-    const endMonth = Math.max(...children.map((child) => child.exitMonth));
-    if (startMonth > endMonth) throw new Error("Im gewählten Startjahr ist keines der Kinder mehr in der Kita.");
+    const endMonth = Math.max(...children.map((child) => child.careEndMonth));
+    if (startMonth > endMonth) throw new Error("Im gewählten Startjahr ist keines der Kinder mehr in Kita oder OGS.");
 
     const months = [];
     for (let month = startMonth; month <= endMonth; month += 1) {
@@ -488,6 +1141,15 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
 
     const oldTotal = sections.reduce((sum, section) => sum + section.oldTotal, 0);
     const newTotal = sections.reduce((sum, section) => sum + section.newTotal, 0);
+    const careTotals = {};
+    for (const [type, ogs] of [["kita", false], ["ogs", true]]) {
+      const sum = (key) => sections.reduce((total, section) => total + section[key]
+        .filter((child) => child.ogs === ogs)
+        .reduce((subtotal, child) => subtotal + child.charged, 0) * section.monthCount, 0);
+      const old = sum("oldChildren");
+      const current = sum("newChildren");
+      careTotals[type] = { oldTotal: old, newTotal: current, difference: current - old };
+    }
     return {
       income,
       startYear,
@@ -498,6 +1160,7 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
       oldTotal,
       newTotal,
       difference: newTotal - oldTotal,
+      careTotals,
     };
   }
 
@@ -529,7 +1192,7 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
       </div>
       <div>
         <p class="eyebrow">Familienplanung</p>
-        <h1>Kita-Beitragsvergleich</h1>
+        <h1>Kitabeitragsrechner 3.0</h1>
       </div>
       <div class="local-badge" title="Alle Daten bleiben in diesem Browser">
         <span class="local-dot" aria-hidden="true"></span>
@@ -550,7 +1213,7 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
         <form id="calculator-form" novalidate>
           <div class="primary-inputs">
             <label class="field income-field">
-              <span>Jahreseinkommen</span>
+              <span>Beitragsrelevantes Jahreseinkommen nach § 3</span>
               <span class="input-shell">
                 <input id="income" name="income" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 64.500" required />
                 <span class="suffix">€</span>
@@ -561,6 +1224,8 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
               <input id="start-year" name="startYear" type="number" min="2000" max="2200" step="1" required />
             </label>
           </div>
+
+          <p class="section-note">Kita und anschließend vier Jahre OGS · gemeinsames beitragsrelevantes Jahreseinkommen.</p>
 
           <div class="children-header">
             <h3>Kinder</h3>
@@ -579,6 +1244,19 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
                 <span>Kita-Startjahr (ab 1. August)</span>
                 <input name="entry-1" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
               </label>
+              <label class="field">
+                <span>Kita-Betreuungszeit pro Woche</span>
+                <select name="hours-1" aria-label="Betreuungszeit für Kind 1">
+                  <option value="15">15 Stunden</option>
+                  <option value="20">20 Stunden</option>
+                  <option value="25">25 Stunden</option>
+                  <option value="30">30 Stunden</option>
+                  <option value="35">35 Stunden</option>
+                  <option value="40">40 Stunden</option>
+                  <option value="45" selected>45 Stunden</option>
+                  <option value="50">50 Stunden</option>
+                </select>
+              </label>
             </fieldset>
             <fieldset class="child-card" data-child="2">
               <legend><span>02</span> Kind 2</legend>
@@ -590,6 +1268,19 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
               <label class="field">
                 <span>Kita-Startjahr (ab 1. August)</span>
                 <input name="entry-2" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
+              </label>
+              <label class="field">
+                <span>Kita-Betreuungszeit pro Woche</span>
+                <select name="hours-2" aria-label="Betreuungszeit für Kind 2">
+                  <option value="15">15 Stunden</option>
+                  <option value="20">20 Stunden</option>
+                  <option value="25">25 Stunden</option>
+                  <option value="30">30 Stunden</option>
+                  <option value="35">35 Stunden</option>
+                  <option value="40">40 Stunden</option>
+                  <option value="45" selected>45 Stunden</option>
+                  <option value="50">50 Stunden</option>
+                </select>
               </label>
             </fieldset>
             <fieldset class="child-card" data-child="3">
@@ -603,6 +1294,19 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
                 <span>Kita-Startjahr (ab 1. August)</span>
                 <input name="entry-3" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
               </label>
+              <label class="field">
+                <span>Kita-Betreuungszeit pro Woche</span>
+                <select name="hours-3" aria-label="Betreuungszeit für Kind 3">
+                  <option value="15">15 Stunden</option>
+                  <option value="20">20 Stunden</option>
+                  <option value="25">25 Stunden</option>
+                  <option value="30">30 Stunden</option>
+                  <option value="35">35 Stunden</option>
+                  <option value="40">40 Stunden</option>
+                  <option value="45" selected>45 Stunden</option>
+                  <option value="50">50 Stunden</option>
+                </select>
+              </label>
             </fieldset>
             <fieldset class="child-card" data-child="4">
               <legend><span>04</span> Kind 4</legend>
@@ -615,14 +1319,27 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
                 <span>Kita-Startjahr (ab 1. August)</span>
                 <input name="entry-4" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="z. B. 2026" />
               </label>
+              <label class="field">
+                <span>Kita-Betreuungszeit pro Woche</span>
+                <select name="hours-4" aria-label="Betreuungszeit für Kind 4">
+                  <option value="15">15 Stunden</option>
+                  <option value="20">20 Stunden</option>
+                  <option value="25">25 Stunden</option>
+                  <option value="30">30 Stunden</option>
+                  <option value="35">35 Stunden</option>
+                  <option value="40">40 Stunden</option>
+                  <option value="45" selected>45 Stunden</option>
+                  <option value="50">50 Stunden</option>
+                </select>
+              </label>
             </fieldset>
           </div>
 
           <div id="form-error" class="error-message" role="alert" hidden></div>
           <div class="form-actions">
             <details class="example-menu" id="example-menu">
-              <summary class="button secondary">Geprüftes Beispiel einsetzen <span aria-hidden="true">⌄</span></summary>
-              <div class="example-options" role="group" aria-label="Geprüftes Beispiel auswählen">
+              <summary class="button secondary">Beispiel einsetzen <span aria-hidden="true">⌄</span></summary>
+              <div class="example-options" role="group" aria-label="Beispiel auswählen">
                 <button type="button" id="example-1">
                   <strong>Beispiel 1 · Zwillinge</strong>
                   <span>36.500 € · 2 Kinder</span>
@@ -634,6 +1351,18 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
                 <button type="button" id="example-3">
                   <strong>Beispiel 3 · Sommer-/Winterkind</strong>
                   <span>90.000 € · 2 Kinder</span>
+                </button>
+                <button type="button" id="example-4">
+                  <strong>Beispiel 4 · Drei Kinder, 35 Stunden</strong>
+                  <span>180.000 € · Start 2026 · zur gemeinsamen Prüfung</span>
+                </button>
+                <button type="button" id="example-5">
+                  <strong>Beispiel 5 · Zwei Kinder, 45 Stunden</strong>
+                  <span>70.000 € · Start 2026 · zur gemeinsamen Prüfung</span>
+                </button>
+                <button type="button" id="example-6">
+                  <strong>Beispiel 6 · Zwei-Beiträge-Begrenzung</strong>
+                  <span>90.000 € · Start 2026 · ein OGS- und zwei Kita-Kinder · 45 h</span>
                 </button>
               </div>
             </details>
@@ -656,7 +1385,8 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
           </button>
         </div>
 
-        <div class="summary-grid" aria-label="Gesamtergebnis">
+        <p class="section-note result-note">Gesamtergebnis für Kita und OGS zusammen</p>
+        <div class="summary-grid" aria-label="Gesamtergebnis für Kita und OGS">
           <article class="summary-card old">
             <p>Alte Satzung</p>
             <strong id="old-total">–</strong>
@@ -678,6 +1408,17 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
             <span id="percentage-caption">bezogen auf die alte Satzung</span>
           </article>
         </div>
+
+        <section class="compact-table-section" aria-labelledby="care-summary-heading">
+          <h3 id="care-summary-heading">Kita und OGS getrennt betrachtet</h3>
+          <p class="section-note result-note">Differenz = neue minus alte Satzung. Prozentwerte beziehen sich auf die jeweiligen alten Kosten. Bei gemischter Betreuung werden die tatsächlich fälligen Kinderbeiträge zugeordnet, einschließlich der Gesamtbegrenzung.</p>
+          <div class="table-wrap">
+            <table class="result-table">
+              <thead><tr><th>Betreuung</th><th>Alt gesamt</th><th>Neu gesamt</th><th>Differenz</th><th>Veränderung in %</th></tr></thead>
+              <tbody id="care-summary-body"></tbody>
+            </table>
+          </div>
+        </section>
 
         <section class="compact-table-section" aria-labelledby="compact-table-heading">
           <div class="compact-table-heading">
@@ -753,6 +1494,25 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
             </section>
 
             <section>
+              <h4>Einkommensgrundlage und Tarifstand</h4>
+              <ul>
+                <li>Beide Satzungen verwenden dasselbe beitragsrelevante Jahreseinkommen nach § 3. Die Einkommensdefinition ist unverändert.</li>
+                <li>Einzugeben ist die Summe der positiven Einkünfte nach § 2 Abs. 1 und 2 EStG mit den Hinzurechnungen und Abzügen nach § 3 der Satzung. Das ist weder einfach das Bruttogehalt noch das zu versteuernde Einkommen. Der Rechner ermittelt diese Grundlage nicht selbst.</li>
+                <li>Beide Einkommen bleiben über den gesamten Berechnungszeitraum konstant.</li>
+                <li>Die Kita-Betreuungszeit wird für jedes Kind separat gewählt: 15, 20, 25, 30, 35, 40, 45 oder 50 Stunden pro Woche. Sie bleibt für dieses Kind über den gesamten Kita-Zeitraum konstant. Standard: 45 Stunden.</li>
+                <li>Die Geschwisterreihenfolge richtet sich nach dem tatsächlichen Grundbeitrag aus Einkommensstufe, Altersklasse und Betreuungszeit. Nach neuer Satzung zahlt das zweite Kind 25 % seines eigenen Tarifs, nicht des Tarifs des teuersten Kindes.</li>
+                <li>Alle Kita- und OGS-Tarife wurden aus der bereitgestellten Excel-Datei übernommen. Je Kind wird der Tarif für die gewählte Kita-Betreuungszeit verwendet. Für die OGS gilt der OGS-Tarif unabhängig von den Kita-Stunden.</li>
+                <li>Alte Einkommensgrenzen sind „bis unter“, neue Obergrenzen einschließlich. Centbeträge oberhalb einer neuen Obergrenze fallen wie bisher in die nächste Einkommensstufe.</li>
+                <li>Direkt nach dem letzten Kita-Juli beginnt am 1. August die OGS. Für Sommerkinder ist dies im Jahr des sechsten Geburtstags, für Winterkinder im Jahr des siebten Geburtstags. Die Simulation nimmt für jedes Kind eine OGS-Anmeldung für genau 48 Monate an; danach endet die Betreuung am 31. Juli.</li>
+                <li>Nur OGS: höchster OGS-Beitrag zu 100 %, zweites Kind zu 50 % seines Regelbeitrags, weitere Kinder beitragsfrei. Diese Regel gilt in beiden Satzungen.</li>
+                <li>Kita und OGS gleichzeitig: nur ein OGS-Beitrag zu 50 % des höchsten OGS-Regelbeitrags, weitere OGS-Kinder beitragsfrei. Auch ein gesetzlich beitragsfreies Kita-Kind löst diese Ermäßigung aus. Die Kita-Geschwisterregeln gelten separat; OGS-Kinder ermäßigen den Kita-Beitrag nicht.</li>
+                <li>Neue Satzung: Nach Anwendung der jeweiligen Kita- und OGS-Geschwisterregeln werden insgesamt nur die beiden höchsten verbleibenden Kinderbeiträge erhoben.</li>
+                <li>Beispiele 1–3 und 5 verwenden 45 Kita-Stunden pro Woche, Beispiel 4 verwendet 35 Stunden. Beispiele 4 und 5 sind zur gemeinsamen Prüfung vorgesehen. Die Gesamtsummen umfassen zusätzlich die OGS-Zeit. Beide Satzungen gelten als Vergleichsszenarien über denselben Zeitraum, unabhängig vom historischen Inkrafttreten. OGS-Beiträge sind nicht von der Kita-Stundenwahl abhängig.</li>
+                <li>Beiträge und Einkommensgrundlage bleiben in der Simulation konstant. Essen, zusätzliche Ferienkosten, Sozialleistungsbefreiungen sowie abweichende Schul- und Betreuungsverläufe sind nicht eingerechnet.</li>
+              </ul>
+            </section>
+
+            <section>
               <h4>Beitragsfreie Jahre</h4>
               <ul>
                 <li><strong>Sommerkinder</strong> haben vom 1. Januar bis 30. September Geburtstag. Sie sind ab August des Jahres beitragsfrei, in dem sie vier Jahre alt werden, und verlassen die Kita nach dem Juli des Jahres, in dem sie sechs Jahre alt werden.</li>
@@ -791,40 +1551,82 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
 
             <section>
               <h4>Beitragstabellen</h4>
+              <p>Alle Stunden-Tarife aus der gelieferten Tabelle. Breite Tabellen lassen sich horizontal verschieben.</p>
               <div class="rate-tables">
-                <table class="rate-table">
-                  <caption>Alte Satzung</caption>
-                  <thead><tr><th>Einkommen</th><th>U2</th><th>Ü2</th></tr></thead>
-                  <tbody>
-                    <tr><td>0 bis unter 33.000 €</td><td>0 €</td><td>0 €</td></tr>
-                    <tr><td>33.000 bis unter 37.000 €</td><td>106 €</td><td>61 €</td></tr>
-                    <tr><td>37.000 bis unter 50.000 €</td><td>178 €</td><td>102 €</td></tr>
-                    <tr><td>50.000 bis unter 62.000 €</td><td>266 €</td><td>152 €</td></tr>
-                    <tr><td>62.000 bis unter 75.000 €</td><td>370 €</td><td>212 €</td></tr>
-                    <tr><td>75.000 bis unter 87.000 €</td><td>491 €</td><td>281 €</td></tr>
-                    <tr><td>87.000 bis unter 100.000 €</td><td>629 €</td><td>359 €</td></tr>
-                    <tr><td>ab 100.000 €</td><td>725 €</td><td>415 €</td></tr>
-                  </tbody>
-                </table>
-                <table class="rate-table">
-                  <caption>Neue Satzung</caption>
-                  <thead><tr><th>Einkommen</th><th>U3</th><th>Ü3</th></tr></thead>
-                  <tbody>
-                    <tr><td>bis 36.000 €</td><td>0 €</td><td>0 €</td></tr>
-                    <tr><td>36.000,01 bis 43.000 €</td><td>122 €</td><td>82 €</td></tr>
-                    <tr><td>43.000,01 bis 50.000 €</td><td>153 €</td><td>102 €</td></tr>
-                    <tr><td>50.000,01 bis 56.000 €</td><td>190 €</td><td>127 €</td></tr>
-                    <tr><td>56.000,01 bis 62.000 €</td><td>228 €</td><td>152 €</td></tr>
-                    <tr><td>62.000,01 bis 75.000 €</td><td>317 €</td><td>212 €</td></tr>
-                    <tr><td>75.000,01 bis 87.000 €</td><td>421 €</td><td>281 €</td></tr>
-                    <tr><td>87.000,01 bis 100.000 €</td><td>550 €</td><td>366 €</td></tr>
-                    <tr><td>100.000,01 bis 112.000 €</td><td>634 €</td><td>423 €</td></tr>
-                    <tr><td>112.000,01 bis 125.000 €</td><td>659 €</td><td>440 €</td></tr>
-                    <tr><td>125.000,01 bis 150.000 €</td><td>686 €</td><td>458 €</td></tr>
-                    <tr><td>150.000,01 bis 175.000 €</td><td>713 €</td><td>476 €</td></tr>
-                    <tr><td>über 175.000 €</td><td>742 €</td><td>495 €</td></tr>
-                  </tbody>
-                </table>
+                <div class="rate-table-scroll">
+                  <table class="rate-table" data-statute="old" data-category="U2">
+                    <caption>Alte Satzung · U2 · Monatsbeiträge</caption>
+                    <thead><tr><th>Beitragsrelevantes Einkommen/Jahr</th><th>15 h</th><th>20 h</th><th>25 h</th><th>30 h</th><th>35 h</th><th>40 h</th><th>45 h</th><th>50 h</th></tr></thead>
+                    <tbody>
+                      <tr><td>0,00 € bis unter 33.000,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td></tr>
+                      <tr><td>33.000,00 € bis unter 37.000,00 €</td><td>28,00 €</td><td>41,00 €</td><td>54,00 €</td><td>64,00 €</td><td>77,00 €</td><td>93,00 €</td><td>106,00 €</td><td>120,00 €</td></tr>
+                      <tr><td>37.000,00 € bis unter 50.000,00 €</td><td>49,00 €</td><td>70,00 €</td><td>92,00 €</td><td>107,00 €</td><td>129,00 €</td><td>156,00 €</td><td>178,00 €</td><td>200,00 €</td></tr>
+                      <tr><td>50.000,00 € bis unter 62.000,00 €</td><td>75,00 €</td><td>107,00 €</td><td>139,00 €</td><td>161,00 €</td><td>193,00 €</td><td>234,00 €</td><td>266,00 €</td><td>298,00 €</td></tr>
+                      <tr><td>62.000,00 € bis unter 75.000,00 €</td><td>107,00 €</td><td>151,00 €</td><td>195,00 €</td><td>225,00 €</td><td>269,00 €</td><td>327,00 €</td><td>370,00 €</td><td>414,00 €</td></tr>
+                      <tr><td>75.000,00 € bis unter 87.000,00 €</td><td>145,00 €</td><td>203,00 €</td><td>260,00 €</td><td>299,00 €</td><td>357,00 €</td><td>434,00 €</td><td>491,00 €</td><td>549,00 €</td></tr>
+                      <tr><td>87.000,00 € bis unter 100.000,00 €</td><td>188,00 €</td><td>262,00 €</td><td>335,00 €</td><td>383,00 €</td><td>457,00 €</td><td>555,00 €</td><td>629,00 €</td><td>702,00 €</td></tr>
+                      <tr><td>ab 100.000,00 €</td><td>217,00 €</td><td>302,00 €</td><td>386,00 €</td><td>442,00 €</td><td>526,00 €</td><td>640,00 €</td><td>725,00 €</td><td>809,00 €</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="rate-table-scroll">
+                  <table class="rate-table" data-statute="old" data-category="Ü2">
+                    <caption>Alte Satzung · Ü2 · Monatsbeiträge</caption>
+                    <thead><tr><th>Beitragsrelevantes Einkommen/Jahr</th><th>15 h</th><th>20 h</th><th>25 h</th><th>30 h</th><th>35 h</th><th>40 h</th><th>45 h</th><th>50 h</th></tr></thead>
+                    <tbody>
+                      <tr><td>0,00 € bis unter 33.000,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td></tr>
+                      <tr><td>33.000,00 € bis unter 37.000,00 €</td><td>16,00 €</td><td>23,00 €</td><td>31,00 €</td><td>36,00 €</td><td>44,00 €</td><td>53,00 €</td><td>61,00 €</td><td>68,00 €</td></tr>
+                      <tr><td>37.000,00 € bis unter 50.000,00 €</td><td>28,00 €</td><td>40,00 €</td><td>52,00 €</td><td>61,00 €</td><td>73,00 €</td><td>89,00 €</td><td>102,00 €</td><td>114,00 €</td></tr>
+                      <tr><td>50.000,00 € bis unter 62.000,00 €</td><td>43,00 €</td><td>61,00 €</td><td>79,00 €</td><td>92,00 €</td><td>110,00 €</td><td>134,00 €</td><td>152,00 €</td><td>170,00 €</td></tr>
+                      <tr><td>62.000,00 € bis unter 75.000,00 €</td><td>61,00 €</td><td>86,00 €</td><td>111,00 €</td><td>128,00 €</td><td>153,00 €</td><td>187,00 €</td><td>212,00 €</td><td>237,00 €</td></tr>
+                      <tr><td>75.000,00 € bis unter 87.000,00 €</td><td>83,00 €</td><td>116,00 €</td><td>149,00 €</td><td>171,00 €</td><td>204,00 €</td><td>248,00 €</td><td>281,00 €</td><td>314,00 €</td></tr>
+                      <tr><td>87.000,00 € bis unter 100.000,00 €</td><td>108,00 €</td><td>150,00 €</td><td>191,00 €</td><td>219,00 €</td><td>261,00 €</td><td>317,00 €</td><td>359,00 €</td><td>401,00 €</td></tr>
+                      <tr><td>ab 100.000,00 €</td><td>124,00 €</td><td>173,00 €</td><td>222,00 €</td><td>253,00 €</td><td>302,00 €</td><td>366,00 €</td><td>415,00 €</td><td>462,00 €</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="rate-table-scroll">
+                  <table class="rate-table" data-statute="new" data-category="U3">
+                    <caption>Neue Satzung · U3 · Monatsbeiträge</caption>
+                    <thead><tr><th>Beitragsrelevantes Einkommen/Jahr</th><th>15 h</th><th>20 h</th><th>25 h</th><th>30 h</th><th>35 h</th><th>40 h</th><th>45 h</th><th>50 h</th></tr></thead>
+                    <tbody>
+                      <tr><td>bis 36.000,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td></tr>
+                      <tr><td>über 36.000,00 € bis 43.000,00 €</td><td>33,00 €</td><td>48,00 €</td><td>63,00 €</td><td>73,00 €</td><td>88,00 €</td><td>107,00 €</td><td>122,00 €</td><td>137,00 €</td></tr>
+                      <tr><td>über 43.000,00 € bis 50.000,00 €</td><td>42,00 €</td><td>60,00 €</td><td>79,00 €</td><td>92,00 €</td><td>110,00 €</td><td>134,00 €</td><td>153,00 €</td><td>171,00 €</td></tr>
+                      <tr><td>über 50.000,00 € bis 56.000,00 €</td><td>53,00 €</td><td>76,00 €</td><td>99,00 €</td><td>115,00 €</td><td>138,00 €</td><td>167,00 €</td><td>190,00 €</td><td>213,00 €</td></tr>
+                      <tr><td>über 56.000,00 € bis 62.000,00 €</td><td>64,00 €</td><td>92,00 €</td><td>119,00 €</td><td>138,00 €</td><td>165,00 €</td><td>201,00 €</td><td>228,00 €</td><td>255,00 €</td></tr>
+                      <tr><td>über 62.000,00 € bis 75.000,00 €</td><td>92,00 €</td><td>129,00 €</td><td>167,00 €</td><td>193,00 €</td><td>230,00 €</td><td>280,00 €</td><td>317,00 €</td><td>355,00 €</td></tr>
+                      <tr><td>über 75.000,00 € bis 87.000,00 €</td><td>124,00 €</td><td>174,00 €</td><td>223,00 €</td><td>256,00 €</td><td>306,00 €</td><td>372,00 €</td><td>421,00 €</td><td>471,00 €</td></tr>
+                      <tr><td>über 87.000,00 € bis 100.000,00 €</td><td>165,00 €</td><td>229,00 €</td><td>293,00 €</td><td>335,00 €</td><td>400,00 €</td><td>485,00 €</td><td>550,00 €</td><td>614,00 €</td></tr>
+                      <tr><td>über 100.000,00 € bis 112.000,00 €</td><td>190,00 €</td><td>264,00 €</td><td>338,00 €</td><td>387,00 €</td><td>460,00 €</td><td>560,00 €</td><td>634,00 €</td><td>707,00 €</td></tr>
+                      <tr><td>über 112.000,00 € bis 125.000,00 €</td><td>197,00 €</td><td>275,00 €</td><td>351,00 €</td><td>402,00 €</td><td>479,00 €</td><td>582,00 €</td><td>659,00 €</td><td>735,00 €</td></tr>
+                      <tr><td>über 125.000,00 € bis 150.000,00 €</td><td>205,00 €</td><td>286,00 €</td><td>366,00 €</td><td>418,00 €</td><td>498,00 €</td><td>605,00 €</td><td>686,00 €</td><td>765,00 €</td></tr>
+                      <tr><td>über 150.000,00 € bis 175.000,00 €</td><td>213,00 €</td><td>297,00 €</td><td>380,00 €</td><td>435,00 €</td><td>518,00 €</td><td>630,00 €</td><td>713,00 €</td><td>796,00 €</td></tr>
+                      <tr><td>über 175.000,00 €</td><td>222,00 €</td><td>309,00 €</td><td>395,00 €</td><td>452,00 €</td><td>539,00 €</td><td>655,00 €</td><td>742,00 €</td><td>827,00 €</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="rate-table-scroll">
+                  <table class="rate-table" data-statute="new" data-category="Ü3">
+                    <caption>Neue Satzung · Ü3 · Monatsbeiträge</caption>
+                    <thead><tr><th>Beitragsrelevantes Einkommen/Jahr</th><th>15 h</th><th>20 h</th><th>25 h</th><th>30 h</th><th>35 h</th><th>40 h</th><th>45 h</th><th>50 h</th></tr></thead>
+                    <tbody>
+                      <tr><td>bis 36.000,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td><td>0,00 €</td></tr>
+                      <tr><td>über 36.000,00 € bis 43.000,00 €</td><td>22,00 €</td><td>32,00 €</td><td>42,00 €</td><td>49,00 €</td><td>59,00 €</td><td>71,00 €</td><td>82,00 €</td><td>91,00 €</td></tr>
+                      <tr><td>über 43.000,00 € bis 50.000,00 €</td><td>28,00 €</td><td>40,00 €</td><td>52,00 €</td><td>61,00 €</td><td>73,00 €</td><td>89,00 €</td><td>102,00 €</td><td>114,00 €</td></tr>
+                      <tr><td>über 50.000,00 € bis 56.000,00 €</td><td>36,00 €</td><td>51,00 €</td><td>66,00 €</td><td>77,00 €</td><td>92,00 €</td><td>112,00 €</td><td>127,00 €</td><td>142,00 €</td></tr>
+                      <tr><td>über 56.000,00 € bis 62.000,00 €</td><td>43,00 €</td><td>61,00 €</td><td>79,00 €</td><td>92,00 €</td><td>110,00 €</td><td>134,00 €</td><td>152,00 €</td><td>170,00 €</td></tr>
+                      <tr><td>über 62.000,00 € bis 75.000,00 €</td><td>61,00 €</td><td>86,00 €</td><td>111,00 €</td><td>128,00 €</td><td>153,00 €</td><td>187,00 €</td><td>212,00 €</td><td>237,00 €</td></tr>
+                      <tr><td>über 75.000,00 € bis 87.000,00 €</td><td>83,00 €</td><td>116,00 €</td><td>149,00 €</td><td>171,00 €</td><td>204,00 €</td><td>248,00 €</td><td>281,00 €</td><td>314,00 €</td></tr>
+                      <tr><td>über 87.000,00 € bis 100.000,00 €</td><td>110,00 €</td><td>153,00 €</td><td>195,00 €</td><td>223,00 €</td><td>266,00 €</td><td>323,00 €</td><td>366,00 €</td><td>409,00 €</td></tr>
+                      <tr><td>über 100.000,00 € bis 112.000,00 €</td><td>126,00 €</td><td>176,00 €</td><td>226,00 €</td><td>258,00 €</td><td>308,00 €</td><td>373,00 €</td><td>423,00 €</td><td>471,00 €</td></tr>
+                      <tr><td>über 112.000,00 € bis 125.000,00 €</td><td>132,00 €</td><td>184,00 €</td><td>235,00 €</td><td>268,00 €</td><td>320,00 €</td><td>388,00 €</td><td>440,00 €</td><td>490,00 €</td></tr>
+                      <tr><td>über 125.000,00 € bis 150.000,00 €</td><td>137,00 €</td><td>191,00 €</td><td>245,00 €</td><td>279,00 €</td><td>333,00 €</td><td>404,00 €</td><td>458,00 €</td><td>510,00 €</td></tr>
+                      <tr><td>über 150.000,00 € bis 175.000,00 €</td><td>142,00 €</td><td>198,00 €</td><td>255,00 €</td><td>290,00 €</td><td>347,00 €</td><td>420,00 €</td><td>476,00 €</td><td>530,00 €</td></tr>
+                      <tr><td>über 175.000,00 €</td><td>148,00 €</td><td>206,00 €</td><td>265,00 €</td><td>302,00 €</td><td>360,00 €</td><td>437,00 €</td><td>495,00 €</td><td>551,00 €</td></tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </section>
           </div>
@@ -916,7 +1718,9 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
       if (!Number.isInteger(entryYear) || entryYear < 2000 || entryYear > 2200) {
         throw new Error("Bitte für Kind " + index + " ein gültiges Kita-Startjahr eingeben.");
       }
-      children.push({ id: index, name: "Kind " + index, birth, entry: entryYear + "-08-01" });
+      const hoursText = form.elements["hours-" + index].value;
+      if (!hoursText) throw new Error("Bitte die Betreuungszeit für Kind " + index + " auswählen.");
+      children.push({ id: index, name: "Kind " + index, birth, entry: entryYear + "-08-01", hours: Number(hoursText) });
     }
     return children;
   }
@@ -937,9 +1741,25 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
       const inactiveClass = !oldState.active ? " muted" : "";
       return '<div class="child-status' + inactiveClass + '">' +
         '<strong>' + oldState.name + '</strong><span class="child-age">' + ageText + '</span>' +
-        '<small>' + statusFor(oldState, newState) + '</small>' +
+        '<small>' + (oldState.ogs ? 'OGS · ' : oldState.hours + ' Stunden/Woche · ') + statusFor(oldState, newState) + '</small>' +
         '</div>';
     }).join("");
+  }
+
+  function careDifferenceDetails(section) {
+    const sum = (states, ogs) => states.filter(child => child.ogs === ogs)
+      .reduce((total, child) => total + child.charged, 0);
+    const signedEuro = value => (value > 0 ? "+" : "") + euro.format(value);
+    const parts = [
+      ["Kita", sum(section.newChildren, false) - sum(section.oldChildren, false)],
+      ["OGS", sum(section.newChildren, true) - sum(section.oldChildren, true)],
+      ["Zusammen", section.differenceMonthly],
+    ];
+    return '<div class="care-difference-details" aria-label="So setzt sich die Differenz zusammen">' +
+      '<span class="care-difference-label">Differenz:</span>' + parts.map(([label, monthly]) =>
+        '<span class="care-difference-item"><strong>' + label + '</strong> <span class="' + differenceClass(monthly) + '">' +
+        signedEuro(monthly) + '/Monat</span> <small>(' + signedEuro(monthly * section.monthCount) +
+        ' im Abschnitt)</small></span>').join("") + '</div>';
   }
 
   function differenceClass(value) {
@@ -1049,6 +1869,19 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
     lastCompactSections = compactSections;
     document.getElementById("old-total").textContent = euro.format(result.oldTotal);
     document.getElementById("new-total").textContent = euro.format(result.newTotal);
+    document.getElementById("care-summary-body").innerHTML = [
+      ["Kita", result.careTotals.kita],
+      ["OGS", result.careTotals.ogs],
+      ["Gesamt", result],
+    ].map(([label, totals]) => {
+      const signed = (value, format) => (value > 0 ? "+" : "") + format(value);
+      const percentage = totals.oldTotal > 0
+        ? signed(totals.difference / totals.oldTotal * 100, value => percent.format(value)) + " %"
+        : totals.newTotal === 0 ? "0,0 %" : "nicht berechenbar";
+      return '<tr class="amount-row"><th scope="row">' + label + '</th><td>' + euro.format(totals.oldTotal) +
+        '</td><td>' + euro.format(totals.newTotal) + '</td><td class="' + differenceClass(totals.difference) + '">' +
+        signed(totals.difference, value => euro.format(value)) + '</td><td>' + percentage + '</td></tr>';
+    }).join("");
     const differenceCard = document.getElementById("difference-card");
     differenceCard.classList.remove("saves", "costs", "neutral");
     differenceCard.classList.add(differenceClass(result.difference));
@@ -1090,7 +1923,7 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
     }
 
     document.getElementById("result-description").textContent =
-      "Erkanntes Jahreseinkommen: " + euro.format(result.income) + " · " +
+      "Beitragsrelevantes Jahreseinkommen: " + euro.format(result.income) + " · " +
       compactSections.length + (compactSections.length === 1 ? " Beitragsabschnitt" : " Beitragsabschnitte") +
       " von " + formatMonth(result.startMonth) + " bis " + formatMonth(result.endMonth);
 
@@ -1107,7 +1940,7 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
         '<td class="number amount total-cell"><strong>' + euro.format(section.newTotal) + "</strong></td>" +
         '<td class="number amount delta total-cell ' + differenceClass(differenceTotalValue) + '"><strong>' + euro.format(differenceTotalValue) + "</strong></td>" +
         "</tr>" +
-        '<tr class="details-row"><td colspan="8"><div class="details-label">Kinder und Alter</div><div class="children-detail-grid">' + childCell(section) + "</div></td></tr>";
+        '<tr class="details-row"><td colspan="8"><div class="details-label">Kinder und Alter</div><div class="children-detail-grid">' + childCell(section) + "</div>" + careDifferenceDetails(section) + "</td></tr>";
     }).join("");
 
     compactResultBody.innerHTML = compactSections.map((section) => {
@@ -1146,7 +1979,7 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
   });
 
   window.addEventListener("error", function () {
-    errorBox.textContent = "Die Anwendung konnte nicht vollständig geladen werden. Bitte die Datei Kita-Beitragsrechner.html direkt in Safari, Chrome, Edge oder Firefox öffnen.";
+    errorBox.textContent = "Die Anwendung konnte nicht vollständig geladen werden. Bitte die Datei Kitabeitragsrechner_3.0.html direkt in Safari, Chrome, Edge oder Firefox öffnen.";
     errorBox.hidden = false;
   });
 
@@ -1178,6 +2011,20 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
     },
   };
 
+  referenceExamples[4] = {
+    income: "180.000", startYear: "2026",
+    children: [["2022-04-25", "2023", "35"], ["2024-01-03", "2025", "35"], ["2026-07-16", "2027", "35"]],
+  };
+  referenceExamples[5] = {
+    income: "70.000", startYear: "2026",
+    children: [["2024-06-25", "2025", "45"], ["2025-04-03", "2026", "45"]],
+  };
+
+  referenceExamples[6] = {
+    income: "90.000", startYear: "2026",
+    children: [["2020-06-15", "2021", "45"], ["2024-06-15", "2025", "45"], ["2025-06-15", "2026", "45"]],
+  };
+
   function applyReferenceExample(exampleNumber) {
     const example = referenceExamples[exampleNumber];
     incomeInput.value = example.income;
@@ -1186,12 +2033,13 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
       const child = example.children[index - 1] || ["", ""];
       form.elements["birth-" + index].value = child[0];
       form.elements["entry-" + index].value = child[1];
+      form.elements["hours-" + index].value = child[2] || "45";
     }
     document.getElementById("example-menu").open = false;
     form.requestSubmit();
   }
 
-  for (let exampleNumber = 1; exampleNumber <= 3; exampleNumber += 1) {
+  for (let exampleNumber = 1; exampleNumber <= 6; exampleNumber += 1) {
     document.getElementById("example-" + exampleNumber).addEventListener("click", function () {
       applyReferenceExample(exampleNumber);
     });
@@ -1201,6 +2049,7 @@ footer { width: min(1480px, calc(100% - 32px)); margin: 0 auto 30px; color: #718
     document.getElementById("clear-child-" + index).addEventListener("click", function () {
       form.elements["birth-" + index].value = "";
       form.elements["entry-" + index].value = "";
+      form.elements["hours-" + index].value = "45";
       if (typeof form.elements["birth-" + index].focus === "function") {
         form.elements["birth-" + index].focus();
       }
